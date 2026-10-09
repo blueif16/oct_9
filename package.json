@@ -1,0 +1,8 @@
+{
+  "name": "oct_9",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tracing/test/**/*.test.mjs\""
+  }
+}

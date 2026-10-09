@@ -150,16 +150,47 @@ Verified 2026-10-09: rows appended by a refreshable MV do fire the downstream in
 | Fields inside `payload` | `JSONExtractString(payload, 'conclusion')`, `JSONExtractBool(payload, 'forced')` |
 | HTTP out | `ENGINE = URL('https://api.guild.ai/…/sessions', JSONEachRow, headers('Authorization' = 'Basic …'))` |
 | Refresh health | `SELECT view, status, last_success_time, exception FROM system.view_refreshes` |
+| Webhook delivery | `SELECT event_time, status, exception FROM system.query_views_log WHERE view_name = 'agent_traces.trigger_requests_mv'` |
 
 ### Triggers
 
-| Detector | Fires when | Agent | Status |
-|---|---|---|---|
-| `detect_session_end_mv` | a `session_end` with ≥ 5 tool calls in its segment | `session-retro` → PLAYBOOK docs | live (agent v1.0.0 published) |
-| volume | a live session passes another N tool calls | `session-retro` | planned |
-| thrash | same command / failing goal ≥ 3 times in 10 min | `loop-breaker` | planned |
-| PR merged | `github_pr` closed + merged; context = linked sessions' calls since the agent's last run | `workflow-canonizer` → RUNBOOK (proposed) | planned |
-| guardrail | new Semgrep finding / CI failure / force-push, debounced to 30 min | `trace-to-memory` → LESSON | planned (manual today) |
+All detectors refresh every 5 minutes, emit at most one row per refresh, and are live (agents published and
+installed in the Guild workspace).
+
+| Detector | Fires when | Agent → writes |
+|---|---|---|
+| `detect_session_end_mv` | a `session_end` whose segment has ≥ 5 tool calls | `session-retro` → `PLAYBOOK-<workflow>-V<n>` (most efficient path) |
+| `detect_pr_merged_mv` | a `github_pr` closed + merged with ≥ 5 traced calls on its head branch since the branch's last run | `workflow-canonizer` → `RUNBOOK-<workflow>-V<n>`, `status: proposed` |
+| `detect_loops_mv` (thrash) | ≥ 3 failed tool calls by one session in a 10-minute bucket | `loop-breaker` → `LESSON-loop-<goal>-V<n>` (only if a later call resolved it) |
+| `detect_loops_mv` (volume) | a live session passes another 40 tool calls; window = calls since its last checkpoint. One row per refresh across both signals, thrash first, so loop-breaker runs never overlap | `loop-breaker` (checkpoint; skips windows a thrash run owns) |
+| `detect_guardrail_mv` | new Semgrep findings, failed CI runs, or force-pushes; at most one run per 30-minute bucket | `trace-to-memory` → `LESSON-*` + the CURRENT.md index |
+
+Workflows (fixed list): `feature`, `bugfix`, `ci-fix`, `security-fix`, `other` (`other` writes nothing).
+Thresholds 5 / 3 / 40 / 30 min are guesses, sized for the small data volume so far.
+
+### Approving a runbook
+`workflow-canonizer` only proposes. Coding agents follow a RUNBOOK only when its text says `status: approved`
+(AGENTS.md rule 8). To approve, review the document and change that one line:
+
+```bash
+senso kb get-content <node_id> --output json | jq -r .text > /tmp/rb.md   # edit: status: proposed → approved
+senso kb patch-raw <node_id> --data "$(jq -n --rawfile t /tmp/rb.md '{text:$t}')"
+```
+The next canonizer version stays `proposed` and lists its `## Changes from approved`.
+
+### Gotchas we hit
+- **One row per INSERT into `trigger_requests`.** The URL engine POSTs a whole insert block as one body, and
+  Guild rejects a multi-row body with `400 Bad Request` (measured). Block-size settings did not split it, so every
+  detector ends with `LIMIT 1` and a backlog drains one row per detector per refresh. A failed POST still leaves
+  its rows in `trigger_requests`, so the dedup key then blocks a resend; re-send with a new `dedup_key`.
+  Check delivery in `system.query_views_log` (`view_name = 'agent_traces.trigger_requests_mv'`).
+- **SELECT aliases are visible in WHERE.** `'loop-breaker' AS agent` shadowed `events.agent`, so the filter
+  `agent IN ('claude','codex')` matched nothing. Qualify source columns (`ev.agent`) when an alias reuses a name.
+- **Concurrent writers create duplicate versions.** Two runs that both see no `-V1` both create it. Each agent
+  gets at most one trigger per refresh (thrash and volume share one detector), and loop-breaker checkpoints skip
+  windows already sent as thrash.
+- **Detectors run immediately on creation** and backfill the last 1–7 days. Insert a row with the same
+  `dedup_key` and `agent = ''` to hold one back (the routing view skips empty agents).
 
 Design and decisions: Senso `DESIGN-agent-triggers-V1.md`.
 

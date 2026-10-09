@@ -1,0 +1,3 @@
+.trace/
+node_modules/
+.env*

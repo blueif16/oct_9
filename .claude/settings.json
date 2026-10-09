@@ -1,5 +1,22 @@
 {
   "enabledPlugins": {
     "semgrep@claude-plugins-official": true
+  },
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/tracing/hook.mjs\" claude", "async": true }] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/tracing/hook.mjs\" claude", "async": true }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write|Bash", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/tracing/hook.mjs\" claude", "async": true }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/tracing/hook.mjs\" claude", "async": true }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/tracing/hook.mjs\" claude", "timeout": 5 }] }
+    ]
   }
 }

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "clickhouse": {
+      "command": "sh",
+      "args": ["-c", "set -a; . \"$HOME/.config/oct9/clickhouse.env\"; exec uv run --with mcp-clickhouse --python 3.10 mcp-clickhouse"]
+    }
+  }
+}

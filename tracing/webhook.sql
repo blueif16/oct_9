@@ -19,34 +19,26 @@ ENGINE = MergeTree
 ORDER BY requested_at;
 
 -- URL engine: an INSERT becomes an HTTP POST. Header values are masked in SHOW CREATE.
-CREATE TABLE IF NOT EXISTS agent_traces.guild_webhook
+-- One API trigger key starts any agent installed in the workspace: `agent_id` in the body picks the agent
+-- (docs.guild.ai/platform/api-triggers.md). So all agents share this table and one key.
+-- Recreated (it stores no data) so its columns stay current. The view that writes to it is dropped first.
+DROP VIEW IF EXISTS agent_traces.trigger_requests_mv;
+DROP TABLE IF EXISTS agent_traces.guild_webhook;
+CREATE TABLE agent_traces.guild_webhook
 (
     session_type String,
+    agent_id     String,
     agent_input  Tuple(text String)
 )
 ENGINE = URL('{{GUILD_URL}}', JSONEachRow,
              headers('Authorization' = 'Basic {{GUILD_AUTH}}', 'Content-Type' = 'application/json'));
 
--- Insert trigger: each trace-to-memory row fires one POST. Recreated so the routing filter stays current.
-DROP VIEW IF EXISTS agent_traces.trigger_requests_mv;
+-- Insert trigger: each trigger_requests row fires one POST to the agent in its `agent` column.
+-- A non-empty detector context is appended to the text so the agent starts from the precomputed counts.
 CREATE MATERIALIZED VIEW agent_traces.trigger_requests_mv TO agent_traces.guild_webhook AS
-SELECT 'api_trigger' AS session_type, CAST(tuple(text), 'Tuple(text String)') AS agent_input
+SELECT
+    'api_trigger' AS session_type,
+    concat('{{GUILD_OWNER}}~', agent) AS agent_id,
+    CAST(tuple(if(context IN ('', '{}'), text, concat(text, ' Context: ', context))), 'Tuple(text String)') AS agent_input
 FROM agent_traces.trigger_requests
-WHERE agent = 'trace-to-memory';
-
--- session-retro: same pattern, its own Guild API trigger key (GUILD_TRIGGER_KEY_SESSION_RETRO in guild.env).
--- The detector's context JSON is appended to the text so the agent starts with the precomputed counts.
--- Skipped by `npm run trace:webhook` until that key exists.
-CREATE TABLE IF NOT EXISTS agent_traces.guild_webhook_session_retro
-(
-    session_type String,
-    agent_input  Tuple(text String)
-)
-ENGINE = URL('{{GUILD_URL}}', JSONEachRow,
-             headers('Authorization' = 'Basic {{GUILD_AUTH_SESSION_RETRO}}', 'Content-Type' = 'application/json'));
-
-DROP VIEW IF EXISTS agent_traces.trigger_requests_session_retro_mv;
-CREATE MATERIALIZED VIEW agent_traces.trigger_requests_session_retro_mv TO agent_traces.guild_webhook_session_retro AS
-SELECT 'api_trigger' AS session_type, CAST(tuple(concat(text, ' Context: ', context)), 'Tuple(text String)') AS agent_input
-FROM agent_traces.trigger_requests
-WHERE agent = 'session-retro';
+WHERE agent != '';

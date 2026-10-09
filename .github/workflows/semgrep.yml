@@ -18,11 +18,11 @@ jobs:
   semgrep:
     name: semgrep/ci
     runs-on: ubuntu-latest
-    container:
-      image: semgrep/semgrep
     if: (github.actor != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@v6
+      # pipx, not the semgrep/semgrep container: shared runners hit Docker Hub's anonymous pull rate limit.
+      - run: pipx install semgrep
       - name: Require SEMGREP_APP_TOKEN
         run: |
           if [ -z "$SEMGREP_APP_TOKEN" ]; then

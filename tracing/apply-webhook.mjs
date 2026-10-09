@@ -25,7 +25,7 @@ for (const stmt of sql.split(';').map((s) => s.trim()).filter(Boolean)) {
     method: 'POST', body: stmt,
     headers: { 'X-ClickHouse-User': env.CLICKHOUSE_USER || 'default', 'X-ClickHouse-Key': env.CLICKHOUSE_PASSWORD },
   });
-  const name = /(TABLE|VIEW)(?: IF NOT EXISTS)? (\S+)/.exec(stmt)?.[2];
+  const name = /(TABLE|VIEW)(?: IF (?:NOT )?EXISTS)? (\S+)/.exec(stmt)?.[2];
   if (!res.ok) { console.error(`Failed on ${name}:\n${(await res.text()).replaceAll(fill.GUILD_AUTH, '[REDACTED]')}`); process.exit(1); }
   console.log(`ok: ${name}`);
 }

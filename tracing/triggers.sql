@@ -51,6 +51,7 @@ HAVING tool_call_count >= 5
 -- A PR's sessions are the agent events recorded on its head branch (hooks stamp git_branch). The window
 -- runs from this branch's previous canonizer run (or its first event) to the merge, so a reused branch only
 -- contributes its new tool calls. Skips PRs with fewer than 5 traced tool calls (guessed floor).
+-- Runs at most one PR per refresh (oldest first), so canonizer runs never overlap.
 CREATE MATERIALIZED VIEW IF NOT EXISTS agent_traces.detect_pr_merged_mv
 REFRESH EVERY 5 MINUTE APPEND TO agent_traces.trigger_requests AS
 WITH merged AS (
@@ -87,7 +88,10 @@ INNER JOIN (SELECT * FROM agent_traces.events FINAL WHERE git_branch IN (SELECT 
 WHERE e.ts > p.prev_end AND e.ts <= m.merged_ts
 GROUP BY m.pr, m.branch, m.event_id
 HAVING tool_call_count >= 5
-   AND dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'pr_merged');
+   AND dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'pr_merged')
+-- One PR per refresh: two concurrent runs would both see no RUNBOOK-<workflow>-V1 and both create it.
+ORDER BY window_end
+LIMIT 1;
 
 -- Detector 3: thrash → loop-breaker (writes efficiency LESSON docs).
 -- ≥ 3 failed tool calls by one session within a 10-minute bucket. Failures, not exact repeats: agents rewrite

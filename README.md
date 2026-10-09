@@ -4,16 +4,23 @@
 
 > *Fail once. Ask the team. Never twice.*
 
-## Why this exists
+## About
 
-Every coding-agent session starts with no memory of the ones before it. When an agent hits a problem a teammate's agent solved yesterday, it doesn't know. So it retries: rewrites the call, changes a flag, tries again. Each retry burns tokens and CI minutes, and a security mistake fixed once gets written again in the next session.
+token-wise gives a team's coding agents a shared memory, so no agent makes the same mistake twice.
 
-The usual tools each solve one piece:
-- **Scanners** find the problem but don't teach the agent how this team fixes it.
-- **Memory stores** hold knowledge but don't step in at the moment an agent fails.
-- **Human review** either interrupts constantly or arrives after the damage.
+The problem: every coding-agent session starts with no memory of the ones before it. When an agent hits a bug that a teammate's agent solved yesterday, it doesn't know. So it retries: it rewrites the call, changes a flag, and tries again, burning tokens and CI minutes. A security mistake fixed once gets written again in the next session. The usual tools each cover one piece: scanners find problems but don't teach the agent how this team fixes them, memory tools store knowledge but don't step in when an agent fails, and human review either interrupts constantly or arrives too late.
 
-token-wise connects these pieces into one loop. A failure is **caught**, matched to a **team lesson** right when it happens, **sent to a human** with full context when the agent is stuck, and finally **turned into a new lesson** for the next agent. Every step leaves a record in ClickHouse, so it can be audited and measured.
+token-wise connects these pieces into three loops that run at three speeds.
+
+**Catch (seconds):** Semgrep Guardian scans every file an agent writes and blocks security findings. Before trying again, the agent looks up the team's lesson in Senso, our shared memory, applies that fix, and logs that the lesson was used.
+
+**Escalate (minutes):** Semgrep AppSec and our own repository rules scan every pull request. The agent fixes failures using team lessons, but after three failed runs it stops, and the PR is labeled needs-human. A Guild agent then asks a human one question in Slack, with what was tried, which rules failed, and what team memory says. The human replies with one word (continue, rerun, guardrail, or stop), and the agent acts on it.
+
+**Learn (in the background):** every prompt, tool call, security scan, push, and CI run is traced into ClickHouse, with secrets redacted first. When ClickHouse spots a failure pattern, it starts a Guild agent that reads the traces and writes a new, versioned lesson into Senso. The next agent that hits the same problem fixes it on the first try.
+
+Every step leaves a record in ClickHouse, so the system can be audited and measured. It works with both Claude Code and Codex, which share one memory and one set of rules.
+
+Built with Semgrep, Senso, ClickHouse, Guild, Slack, Claude Code, and Codex.
 
 ## What it does: three loops, three speeds
 

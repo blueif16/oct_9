@@ -1,0 +1,17 @@
+rules:
+  - id: trace-payload-must-be-redacted
+    message: >-
+      Trace rows leave the machine for ClickHouse, so every `payload` must pass through
+      `redact()` from tracing/lib/redact.mjs (AGENTS.md: payloads are redacted before they
+      leave the machine). Write `payload: JSON.stringify(redact(x))`.
+    severity: ERROR
+    languages: [javascript]
+    metadata:
+      source: AGENTS.md "Tool-call tracing" (project requirement)
+    patterns:
+      - pattern: |
+          { ..., payload: JSON.stringify($X), ... }
+      - pattern-not: |
+          { ..., payload: JSON.stringify(redact(...)), ... }
+      - pattern-not: |
+          { ..., payload: JSON.stringify(truncate(redact(...))), ... }

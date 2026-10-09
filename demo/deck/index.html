@@ -174,6 +174,18 @@ em { font-style: italic; color: var(--amber); }
 .slot img, .slot video { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
 body.record .slot .ph span { visibility: hidden; }
 
+/* Animated mock inside a slot: shown until a real capture is set in data-src.
+   Content uses the real commands, rule IDs and lesson names; tagged "illustration". */
+.slot.mocked { border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+.slot.mocked .ph { display: none; }
+.mock { position: absolute; inset: 0; padding: 36px 44px; background: #0e1218; font-family: var(--font-mono); font-size: 20px; line-height: 1.75; color: var(--paper); text-align: left; }
+.mock .dots { display: flex; gap: 8px; margin-bottom: 22px; } .mock .dots i { width: 12px; height: 12px; border-radius: 50%; background: #2a3140; }
+.mock .tagx { position: absolute; right: 26px; top: 26px; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.mock .cmd { color: var(--amber); } .mock .ok { color: var(--mint); } .mock .bad { color: var(--red); } .mock .dim { color: var(--dim); }
+.mock .add { color: var(--mint); } .mock .del { color: var(--red); text-decoration: line-through; opacity: .8; }
+.mock .card { margin-top: 14px; border: 1.5px solid var(--mint); border-radius: 10px; padding: 18px 22px; background: rgba(61,255,176,.05); line-height: 1.6; }
+.mock .card b { color: var(--mint); font-weight: 400; }
+
 /* ===========================================
    SLIDE 6: THREE STRIKES
    =========================================== */
@@ -341,6 +353,20 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
     <div class="beat">
         <figure class="slot" data-beat="B1" data-src="" data-at="0">
             <div class="ph"><b>B1</b><span>Guardian blocks shell=True → agent reads the Senso lesson → fixed diff → clean re-scan</span></div>
+            <div class="mock">
+                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">illustration</div>
+                <div data-at="1"><span class="cmd">agent ▸</span> Write demo/run_cmd.py</div>
+                <div data-at="2.5" class="dim">  subprocess.run(cmd, shell=True)</div>
+                <div data-at="6"><span class="bad">✗ Semgrep Guardian · 1 finding · write blocked</span></div>
+                <div data-at="6.6" class="dim">  [ERROR] python.lang.security.audit.subprocess-shell-true</div>
+                <div data-at="11"><span class="cmd">$</span> senso kb children $FOLDER | grep LESSON-semgrep-…</div>
+                <div data-at="12.5"><span class="ok">✓</span> LESSON-semgrep-…-subprocess-shell-true-V1.md</div>
+                <div data-at="14" class="dim">  Do this instead: pass the command as a list, shell=False</div>
+                <div data-at="18.5"><span class="del">subprocess.run(cmd, shell=True)</span></div>
+                <div data-at="19"><span class="add">subprocess.run(shlex.split(cmd))</span></div>
+                <div data-at="21"><span class="ok">✓ Semgrep Guardian · 0 findings</span></div>
+                <div data-at="22.5"><span class="cmd">$</span> node tracing/hook.mjs context-injected <span class="dim">→ ClickHouse</span></div>
+            </div>
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Caught in<br><em>seconds.</em></div>
@@ -413,6 +439,19 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
     <div class="beat">
         <figure class="slot" data-beat="B5" data-src="" data-at="0">
             <div class="ph"><b>B5</b><span>ClickHouse trigger → Guild trace-to-memory session → new LESSON-…-V1 appears in Senso</span></div>
+            <div class="mock">
+                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">illustration</div>
+                <div data-at="3"><span class="cmd">ClickHouse</span> agent_traces.events</div>
+                <div data-at="4" class="dim">  semgrep_scan · tool_call · github_push · github_ci …</div>
+                <div data-at="8"><span class="bad">!</span> semgrep/repo-rules failed 3× on one branch</div>
+                <div data-at="9" class="dim">  INSERT INTO trigger_requests (agent) VALUES ('trace-to-memory')</div>
+                <div data-at="13.5"><span class="cmd">Guild</span> blueif16~trace-to-memory · session started</div>
+                <div data-at="14.5" class="dim">  reading traces (read-only SQL) · writing lesson</div>
+                <div class="card" data-at="17">
+                    <b>+ Senso</b> LESSON-semgrep-semgrep-rules-<br>trace-payload-must-be-redacted-V1.md
+                    <div class="dim" style="margin-top:8px">## Do this instead: redact the payload before it is sent</div>
+                </div>
+            </div>
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Failures become<br><em>memory.</em></div>
@@ -439,6 +478,16 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
     <div class="beat">
         <figure class="slot" data-beat="B6" data-src="" data-at="0">
             <div class="ph"><b>B6</b><span>Fresh session, same mistake → finds the new lesson → one fix push → green</span></div>
+            <div class="mock">
+                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">illustration</div>
+                <div data-at="2"><span class="cmd">new session ▸</span> PR semgrep/repo-rules is failing. Fix it.</div>
+                <div data-at="3.5"><span class="bad">✗</span> semgrep.rules.trace-payload-must-be-redacted</div>
+                <div data-at="5.5"><span class="cmd">$</span> senso kb children $FOLDER | grep LESSON-semgrep-semgrep-rules-…</div>
+                <div data-at="7"><span class="ok">✓</span> found yesterday's lesson · V1</div>
+                <div data-at="9"><span class="cmd">$</span> git push <span class="dim"># fix: redact trace payload (1 commit)</span></div>
+                <div data-at="11"><span class="ok">✓ semgrep/ci</span>   <span class="ok">✓ semgrep/repo-rules</span></div>
+                <div data-at="12" class="ok">  All checks have passed · first try</div>
+            </div>
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Same mistake.<br>New agent.<br><em>First try.</em></div>
@@ -515,7 +564,8 @@ class SlidePresentation {
     setupSlots() {
         document.querySelectorAll('.slot').forEach(slot => {
             const src = slot.dataset.src;
-            if (!src) return;
+            if (!src) { if (slot.querySelector('.mock')) slot.classList.add('mocked'); return; }
+            slot.querySelector('.mock')?.remove();
             const isVideo = /\.(mp4|webm|mov)$/i.test(src);
             const el = document.createElement(isVideo ? 'video' : 'img');
             el.src = src;

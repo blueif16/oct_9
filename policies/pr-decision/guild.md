@@ -22,7 +22,7 @@ One text message in one of two forms. The word `dry_run` anywhere in it turns on
 1. **Escalation** from the Semgrep workflow:
    `ESCALATE repo=<owner/repo> pr=<number> branch=<name> run_id=<number> failures=<number> run_url=<url>`
    Required: repo, pr, branch, run_id, failures. run_url is optional.
-2. **Slack event** from the Slack trigger: `SLACK_EVENT <JSON>`. The Slack fields are under the JSON's `event` key; if there is no `event` key, read them from the top level. Fields you use: `channel`, `user`, `bot_id`, `subtype`, `text`, `ts`, `thread_ts`.
+2. **Slack event** from the Slack trigger, in either form: `SLACK_EVENT <JSON>`, or Guild's wrapper `You just received a webhook from slack. The webhook is of event "message" ... The payload is:` followed by a ```json block (the JSON is that block). The Slack fields are under the JSON's `event` key; if there is no `event` key, read them from the top level. Fields you use: `channel`, `user`, `bot_id`, `subtype`, `text`, `ts`, `thread_ts`.
 Anything else: reply `OUT_OF_SCOPE: ...` and call no tool.
 
 ## Runtime facts

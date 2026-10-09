@@ -171,6 +171,7 @@ em { font-style: italic; color: var(--amber); }
 .slot .ph span { display: block; font-size: 20px; line-height: 1.7; max-width: 820px; }
 .slot.filled { border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0,0,0,.55); }
 .slot.filled .ph { display: none; }
+.beat .slot { grid-area: 1 / 1; }   /* a second slot in a beat stacks on the first; its data-at fades it in */
 .slot img, .slot video { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
 body.record .slot .ph span { visibility: hidden; }
 
@@ -381,17 +382,18 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 <!-- ===========================================
      SLIDE 6 · B2+B3 THREE STRIKES (1:13–1:30)
      Media: PR with red semgrep/repo-rules, then the needs-human label + comment.
-     Real captures, PR #5: semgrep/repo-rules red while semgrep/ci passed, then 2 retry commits ✗,
-     needs-human label and the escalation comment (media/b2-b3-escalation.png).
+     Real stills from PR #5: b2-repo-rules-fail.png (semgrep/ci green, semgrep/repo-rules red), then
+     b3-three-strikes.png fades over it with the strikes (3 failed runs, needs-human label, escalation comment).
      =========================================== -->
 <section class="slide" data-duration="17">
     <aside class="notes">Some mistakes reach a pull request. Our own repo rule catches an unredacted trace payload that Semgrep's default scan missed. Three failures, and the agents stop. The PR is labeled needs-human.</aside>
     <div class="tag tl">loop 2 · escalate</div>
     <div class="tag tr">real · PR #5</div>
     <div class="beat">
-        <figure class="slot" data-beat="B2-B3" data-src="media/b2-b3-escalation.png" data-at="0">
+        <figure class="slot" data-beat="B2-B3" data-src="media/b2-repo-rules-fail.png" data-at="0">
             <div class="ph"><b>B2 · B3</b><span>PR check fails on a blocking rule → 3rd failed run → needs-human label + escalation comment</span></div>
         </figure>
+        <figure class="slot" data-beat="B3" data-src="media/b3-three-strikes.png" data-at="10.5"></figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Three strikes.<br><em>Then a human.</em></div>
             <div class="step" data-at="3"><span class="n">!</span><span>Our repo rule catches what Semgrep's scan missed</span></div>
@@ -437,9 +439,9 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 <section class="slide" data-duration="26">
     <aside class="notes">Meanwhile, the third loop runs. Every tool call and every scan is traced into ClickHouse. When a failure pattern shows up, ClickHouse wakes a Guild agent. It reads the traces and writes a new lesson into Senso. Versioned, never overwritten, so we always know why an idea changed.</aside>
     <div class="tag tl">loop 3 · learn</div>
-    <div class="tag tr">real · written by our Guild agent, 23:31 UTC</div>
+    <div class="tag tr">real · fired automatically · 23:30 → 23:31 UTC</div>
     <div class="beat">
-        <figure class="slot" data-beat="B5" data-src="" data-at="0">
+        <figure class="slot" data-beat="B5" data-src="media/b5-learn-real.png" data-at="0">
             <div class="ph"><b>B5</b><span>ClickHouse trigger → Guild trace-to-memory session → new LESSON-…-V1 appears in Senso</span></div>
             <div class="mock">
                 <div class="dots"><i></i><i></i><i></i></div><div class="tagx">from Senso, verbatim</div>

@@ -16,6 +16,7 @@ If either ID above still reads `TODO_…`, Senso is not set up yet: say so to th
 5. Never overwrite an idea document; save a new version (V1, V2, …) so the reason an idea was dropped stays visible.
 6. Label every number in a document as measured, fixture, or guessed.
 7. After 3 failures of the same goal, on any Semgrep finding, or when the `semgrep/ci` or `semgrep/repo-rules` PR check fails, follow `.claude/skills/senso-lessons/SKILL.md` before trying again.
+8. Before starting a workflow (`feature`, `bugfix`, `ci-fix`, `security-fix`), list its runbooks and playbooks for free: `senso kb children FOLDER_ID --output json | jq -r '.nodes[] | select(.name|test("^(RUNBOOK|PLAYBOOK)-")) | "\(.kb_node_id)  \(.name)"'`. Read the highest `PLAYBOOK-<workflow>-V<n>` and avoid its detours. Read the highest `RUNBOOK-<workflow>-V<n>` whose text says `status: approved`, and follow its steps and guardrails. A `status: proposed` runbook is not yet a rule: obey its NEVER list, but do not treat its steps or actions as approved. Only a human changes a runbook's status.
 
 Commands (add `--output json` when parsing the result):
 

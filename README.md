@@ -87,13 +87,36 @@ Verified 2026-10-09: rows appended by a refreshable MV do fire the downstream in
 
 ### Triggers
 
-| Detector | Fires when | Agent | Status |
-|---|---|---|---|
-| `detect_session_end_mv` | a `session_end` with ≥ 5 tool calls in its segment | `session-retro` → PLAYBOOK docs | live (agent v1.0.0 published) |
-| volume | a live session passes another N tool calls | `session-retro` | planned |
-| thrash | same command / failing goal ≥ 3 times in 10 min | `loop-breaker` | planned |
-| PR merged | `github_pr` closed + merged; context = linked sessions' calls since the agent's last run | `workflow-canonizer` → RUNBOOK (proposed) | planned |
-| guardrail | new Semgrep finding / CI failure / force-push, debounced to 30 min | `trace-to-memory` → LESSON | planned (manual today) |
+All detectors refresh every 5 minutes and are live (agents published and installed in the Guild workspace).
+
+| Detector | Fires when | Agent → writes |
+|---|---|---|
+| `detect_session_end_mv` | a `session_end` whose segment has ≥ 5 tool calls | `session-retro` → `PLAYBOOK-<workflow>-V<n>` (most efficient path) |
+| `detect_pr_merged_mv` | a `github_pr` closed + merged with ≥ 5 traced calls on its head branch since the branch's last run; one PR per refresh | `workflow-canonizer` → `RUNBOOK-<workflow>-V<n>`, `status: proposed` |
+| `detect_thrash_mv` | ≥ 3 failed tool calls by one session in a 10-minute bucket | `loop-breaker` → `LESSON-loop-<goal>-V<n>` (only if a later call resolved it) |
+| `detect_volume_mv` | a live session passes another 40 tool calls; window = calls since its last checkpoint | `loop-breaker` (checkpoint; skips windows a thrash run owns) |
+| `detect_guardrail_mv` | new Semgrep findings, failed CI runs, or force-pushes; at most one run per 30-minute bucket | `trace-to-memory` → `LESSON-*` + the CURRENT.md index |
+
+Workflows (fixed list): `feature`, `bugfix`, `ci-fix`, `security-fix`, `other` (`other` writes nothing).
+Thresholds 5 / 3 / 40 / 30 min are guesses, sized for the small data volume so far.
+
+### Approving a runbook
+`workflow-canonizer` only proposes. Coding agents follow a RUNBOOK only when its text says `status: approved`
+(AGENTS.md rule 8). To approve, review the document and change that one line:
+
+```bash
+senso kb get-content <node_id> --output json | jq -r .text > /tmp/rb.md   # edit: status: proposed → approved
+senso kb patch-raw <node_id> --data "$(jq -n --rawfile t /tmp/rb.md '{text:$t}')"
+```
+The next canonizer version stays `proposed` and lists its `## Changes from approved`.
+
+### Gotchas we hit
+- **SELECT aliases are visible in WHERE.** `'loop-breaker' AS agent` shadowed `events.agent`, so the filter
+  `agent IN ('claude','codex')` matched nothing. Qualify source columns (`ev.agent`) when an alias reuses a name.
+- **Concurrent writers create duplicate versions.** Two runs that both see no `-V1` both create it. The PR
+  detector sends one PR per refresh, and loop-breaker checkpoints skip windows already sent as thrash.
+- **Detectors run immediately on creation** and backfill the last 1–7 days. Insert a row with the same
+  `dedup_key` and `agent = ''` to hold one back (the routing view skips empty agents).
 
 Design and decisions: Senso `DESIGN-agent-triggers-V1.md`.
 

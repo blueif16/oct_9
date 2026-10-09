@@ -60,3 +60,16 @@ test('a network failure keeps the rows in the queue instead of throwing', async 
   await createSink({ config, spoolPath, fetch }).send([{ event_id: 'x' }]);
   assert.deepEqual(spooled(spoolPath), [{ event_id: 'x' }]);
 });
+
+test('rows from a send that was killed midway are recovered by a later send', async () => {
+  const spoolPath = spoolIn();
+  const { writeFileSync, utimesSync } = await import('node:fs');
+  const orphan = `${spoolPath}.99999.1`; // a claimed batch whose process died before finishing
+  writeFileSync(orphan, JSON.stringify({ event_id: 'orphan' }) + '\n');
+  const old = new Date(Date.now() - 10 * 60 * 1000);
+  utimesSync(orphan, old, old);
+  const fetch = fakeFetch();
+  await createSink({ config, spoolPath, fetch }).send([{ event_id: 'new' }]);
+  assert.deepEqual(fetch.calls[0].init.body.split('\n').filter(Boolean).map(JSON.parse).map((r) => r.event_id).sort(), ['new', 'orphan']);
+  assert.equal(existsSync(orphan), false);
+});

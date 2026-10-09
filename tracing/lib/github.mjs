@@ -42,3 +42,19 @@ export function githubRows(eventName, e) {
 
   return [];
 }
+
+// One CI Semgrep results artifact (`semgrep scan --json`) → one semgrep_scan row on the PR branch, so rule IDs
+// that only CI checks (repo rules) reach the traces like Guardian's findings do.
+export function ciSemgrepRow(repo, run, artifact, results) {
+  const found = results?.results ?? [];
+  const uniq = (xs) => [...new Set(xs)];
+  return ghRow({
+    event_id: `gh-sg:${repo}:${run.id}:${run.run_attempt}:${artifact}`,
+    ts: run.updated_at, repo, event_type: 'semgrep_scan', git_sha: run.head_sha, git_branch: run.head_branch,
+    semgrep_outcome: found.length ? 'findings' : 'no_findings',
+    semgrep_findings: found.length,
+    semgrep_rules: uniq(found.map((f) => f.check_id)),
+    semgrep_severities: uniq(found.map((f) => f.extra?.severity ?? '')),
+    semgrep_files: uniq(found.map((f) => f.path)),
+  }, { source: 'ci', artifact, workflow: run.name, run_id: run.id, attempt: run.run_attempt, url: run.html_url });
+}

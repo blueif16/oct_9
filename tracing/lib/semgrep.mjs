@@ -1,4 +1,5 @@
 import { redact } from './redact.mjs';
+import { row } from './events.mjs';
 
 // Guardian registers `"${CLAUDE_PLUGIN_ROOT}/scripts/hook" auto <Event>`; our own hooks never match this.
 const GUARDIAN_CMD = /\/scripts\/hook"? auto (\w+)/;
@@ -27,16 +28,20 @@ function parseSummary(stdout) {
 
 function base(rec, a, eventType) {
   return {
+    agent: 'claude',
     ts: rec.timestamp,
     session_id: rec.sessionId ?? '',
     event_type: eventType,
     tool_use_id: a.toolUseID ?? '',
     hook_event: a.hookEvent ?? '',
+    // Deterministic id: re-reading the same transcript record yields the same row, which ClickHouse dedupes.
+    ...(rec.uuid ? { event_id: rec.uuid } : {}),
   };
 }
 
-export function extractSemgrep(records) {
+export function extractSemgrep(records, ctx = {}) {
   const out = [];
+  const push = (fields) => out.push(row(fields, ctx));
   for (const rec of records) {
     const a = rec?.type === 'attachment' ? rec.attachment : null;
     if (!a) continue;
@@ -47,14 +52,14 @@ export function extractSemgrep(records) {
     if (event === 'PostToolUse' && a.type === 'hook_blocking_error') {
       const report = a.blockingError.blockingError ?? '';
       const p = parseReport(report);
-      out.push({
+      push({
         ...base(rec, a, 'semgrep_scan'),
         semgrep_outcome: 'findings', semgrep_findings: p.findings,
         semgrep_rules: p.rules, semgrep_severities: p.severities, semgrep_files: p.files,
         payload: JSON.stringify(redact({ report, hook_name: a.hookName })),
       });
     } else if (event === 'PostToolUse' && a.type === 'hook_success') {
-      out.push({
+      push({
         ...base(rec, a, 'semgrep_scan'),
         semgrep_outcome: 'no_findings', semgrep_findings: 0,
         semgrep_rules: [], semgrep_severities: [], semgrep_files: [],
@@ -62,7 +67,7 @@ export function extractSemgrep(records) {
       });
     } else if (event === 'Stop' && a.type === 'hook_success') {
       const s = parseSummary(a.stdout ?? '');
-      if (s) out.push({ ...base(rec, a, 'semgrep_summary'), payload: JSON.stringify(s) });
+      if (s) push({ ...base(rec, a, 'semgrep_summary'), payload: JSON.stringify(s) });
     }
   }
   return out;

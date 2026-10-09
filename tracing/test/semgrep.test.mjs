@@ -76,3 +76,18 @@ test('redacts secrets that appear in a finding report', () => {
   const [scan] = extractSemgrep([blocking('toolu_E', report)]);
   assert.ok(!scan.payload.includes(secret));
 });
+
+test('reuses the transcript record uuid as event_id so re-reading the transcript dedupes', () => {
+  const rec = blocking('toolu_A');
+  const [first] = extractSemgrep([rec]);
+  const [again] = extractSemgrep([rec]);
+  assert.equal(first.event_id, rec.uuid);
+  assert.equal(again.event_id, first.event_id);
+});
+
+test('emits complete rows attributed to the claude agent with repo context', () => {
+  const [scan] = extractSemgrep([blocking('toolu_A')], { repo: 'blueif16/oct_9', git_branch: 'main' });
+  assert.equal(scan.agent, 'claude');
+  assert.equal(scan.repo, 'blueif16/oct_9');
+  assert.equal(scan.lesson_id, '');
+});

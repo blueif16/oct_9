@@ -1,0 +1,70 @@
+# Semgrep AppSec Platform scan on every PR. Blocking findings fail the check; the coding agent then follows
+# .claude/skills/senso-lessons (look up the Senso lesson, fix, push). After SEMGREP_FAIL_LIMIT failed runs on
+# one branch, the escalate job labels the PR `needs-human` and agents stop pushing fixes.
+# The name must stay `Semgrep`: trace-github.yml traces completed runs of this workflow by name.
+name: Semgrep
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  SEMGREP_FAIL_LIMIT: 3
+
+jobs:
+  semgrep:
+    name: semgrep/ci
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    if: (github.actor != 'dependabot[bot]')
+    steps:
+      - uses: actions/checkout@v6
+      - name: Require SEMGREP_APP_TOKEN
+        run: |
+          if [ -z "$SEMGREP_APP_TOKEN" ]; then
+            echo "::error::Repository secret SEMGREP_APP_TOKEN is not set (Semgrep AppSec Platform > Settings > Tokens)."
+            exit 1
+          fi
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+      - run: semgrep ci --json-output=semgrep-results.json
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-results
+          path: semgrep-results.json
+          if-no-files-found: ignore
+
+  escalate:
+    name: semgrep/escalate
+    needs: semgrep
+    if: failure() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Label PR needs-human after repeated failures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.head_ref }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # This run is still in progress, so it is not in the failure list yet; add it.
+          prior=$(gh run list --workflow Semgrep --branch "$BRANCH" --status failure --limit 100 --json databaseId --jq length)
+          failures=$((prior + 1))
+          echo "Semgrep failures on $BRANCH: $failures (limit $SEMGREP_FAIL_LIMIT)"
+          if [ "$failures" -lt "$SEMGREP_FAIL_LIMIT" ]; then exit 0; fi
+          if gh pr view "$PR" --json labels --jq '.labels[].name' | grep -qx needs-human; then exit 0; fi
+          gh label create needs-human --color B60205 --description "Agents hit the retry limit; a human must review" --force
+          gh pr edit "$PR" --add-label needs-human
+          gh pr comment "$PR" --body "Semgrep has failed $failures times on this branch (limit $SEMGREP_FAIL_LIMIT). Agents have stopped pushing fixes; a human needs to review. Latest run: $RUN_URL. Remove the \`needs-human\` label to let agents resume."

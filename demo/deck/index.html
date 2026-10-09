@@ -17,7 +17,9 @@
   - Elements with data-count-to="N" count up from 0 when they turn .on.
   - <figure class="slot" data-beat="B1" data-src=""> is a media slot for a captured frame/clip.
     Put a path in data-src (png/jpg/webp → <img>, mp4/webm/mov → <video>) and it replaces the placeholder.
-  - Keys: → / Space next · ← prev · P play/pause timeline · R restart · H hide chrome · E edit text.
+  - Each slide's narration is in <aside class="notes">. Durations are set from its word count at ~120–130 wpm.
+  - Keys: → / Space next · ← prev · P play/pause timeline · R restart · H hide chrome · E edit text
+          N teleprompter bar (rehearsal) · S presenter window (record the deck window, read from this one).
   - URL flags: ?autoplay (start playing) · ?record (autoplay + hidden chrome + no placeholder labels).
 -->
 
@@ -221,6 +223,19 @@ body.record .slot .ph span { visibility: hidden; }
 body.no-chrome .progress, body.no-chrome .deck-controls, body.no-chrome .edit-toggle { display: none; }
 
 /* ===========================================
+   SCRIPT: per-slide narration lives in <aside class="notes">.
+   N shows it as a teleprompter bar (rehearsal; it is visible on screen).
+   S opens a separate presenter window (for recording; record only the deck window).
+   =========================================== */
+.notes { display: none; }
+.prompter { position: fixed; left: 0; right: 0; bottom: 0; z-index: 999; display: none; padding: 22px 48px 40px; background: rgba(11,14,19,.92); border-top: 1px solid var(--line); font-family: var(--font-body); font-size: 26px; line-height: 1.45; color: var(--paper); }
+.prompter .meta { font-family: var(--font-mono); font-size: 13px; color: var(--amber); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 8px; }
+body.show-prompter .prompter { display: block; }
+body.show-prompter .deck-controls { display: none; }
+body.no-chrome .prompter { display: none; }
+@media print { .prompter { display: none !important; } }
+
+/* ===========================================
    INLINE EDITING (hover top-left or press E)
    =========================================== */
 .edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
@@ -237,11 +252,11 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 <main class="deck-stage" id="deckStage">
 
 <!-- ===========================================
-     SLIDE 1 · HOOK (0:00–0:12)
+     SLIDE 1 · HOOK (0:00–0:13)
      Dramatization: an agent stuck retrying the same Semgrep failure at night.
-     Speaker: "It's 2:14 AM. Your coding agent is on attempt seven of the same fix."
      =========================================== -->
-<section class="slide hook" data-duration="12">
+<section class="slide hook" data-duration="13">
+    <aside class="notes">It's two fourteen in the morning. Your coding agent is on attempt seven of the same security fix. And every retry burns more tokens.</aside>
     <div class="tag tr" data-at="0">reenactment</div>
     <div class="clock" data-at="0.2">02:14<small>AM</small></div>
     <div class="term">
@@ -261,53 +276,53 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 </section>
 
 <!-- ===========================================
-     SLIDE 2 · THE TWIST (0:12–0:20)
-     Speaker: "Yesterday a teammate fixed this exact bug. Your agent will never know."
+     SLIDE 2 · THE TWIST (0:13–0:23)
      =========================================== -->
-<section class="slide" data-duration="8">
+<section class="slide" data-duration="10">
+    <aside class="notes">Here's the painful part. Yesterday, a teammate fixed this exact bug. Your agent will never know.</aside>
     <div class="center">
-        <div class="h-lg" data-at="0.3">Yesterday, a teammate<br>fixed this <em>exact</em> bug.</div>
-        <div class="h-lg dim" data-at="3.2">Your agent will never know.</div>
+        <div class="h-lg" data-at="2.2">Yesterday, a teammate<br>fixed this <em>exact</em> bug.</div>
+        <div class="h-lg dim" data-at="5.8">Your agent will never know.</div>
     </div>
 </section>
 
 <!-- ===========================================
-     SLIDE 3 · TITLE (0:20–0:28)
-     Speaker: "Agents don't learn from each other. Teams do. So we gave our agents a team memory."
+     SLIDE 3 · TITLE (0:23–0:33)
      =========================================== -->
-<section class="slide title" data-duration="8">
+<section class="slide title" data-duration="10">
+    <aside class="notes">This is token-wise. Our agents fail once, ask the team, and never make the same mistake twice.</aside>
     <div class="center">
         <div class="wordmark" data-at="0.2">token<span>-</span>wise</div>
         <div class="rule" data-at="0.6"></div>
-        <div class="h-xl" data-at="1.4">Fail once.</div>
-        <div class="h-xl" data-at="2.6"><em>Ask the team.</em></div>
-        <div class="h-xl dim" data-at="3.8">Never twice.</div>
+        <div class="h-xl" data-at="2.8">Fail once.</div>
+        <div class="h-xl" data-at="4.0"><em>Ask the team.</em></div>
+        <div class="h-xl dim" data-at="5.4">Never twice.</div>
     </div>
 </section>
 
 <!-- ===========================================
-     SLIDE 4 · THREE LOOPS (0:28–0:40)
-     Speaker: "Three loops, at three speeds."
+     SLIDE 4 · THREE LOOPS (0:33–0:45)
      =========================================== -->
 <section class="slide" data-duration="12">
+    <aside class="notes">It runs as three loops, at three speeds. Catch, in seconds. Escalate, in minutes. And learn, quietly, in the background.</aside>
     <div class="tag tl">how it works</div>
     <div style="padding: 150px var(--pad) 0;">
         <div class="h-lg" data-at="0.2">Three loops. <em>Three speeds.</em></div>
     </div>
     <div class="loops">
-        <div class="loop" data-at="1.6">
+        <div class="loop" data-at="4.6">
             <div class="when">seconds · on every write</div>
             <h3>Catch</h3>
             <p>A security scan blocks the bad write. The agent asks team memory before trying again.</p>
             <div class="stack">Semgrep Guardian<br>Senso lessons</div>
         </div>
-        <div class="loop" data-at="4.2">
+        <div class="loop" data-at="6.2">
             <div class="when">minutes · on every PR</div>
             <h3>Escalate</h3>
             <p>Three failed scans and the agents stop. A human gets one clear question.</p>
             <div class="stack">Semgrep AppSec<br>Guild agent → Slack</div>
         </div>
-        <div class="loop" data-at="6.8">
+        <div class="loop" data-at="7.8">
             <div class="when">in the background</div>
             <h3>Learn</h3>
             <p>Every action is traced. Failures become lessons the next agent reads.</p>
@@ -317,10 +332,11 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 </section>
 
 <!-- ===========================================
-     SLIDE 5 · B1 CATCH (0:40–1:08)
-     Media: B1 clip/frames. Speaker narrates the four steps as they light up.
+     SLIDE 5 · B1 CATCH (0:45–1:13)
+     Media: B1 clip/frames. The four steps light up as they are spoken.
      =========================================== -->
 <section class="slide" data-duration="28">
+    <aside class="notes">First, catch. The agent writes a shell command with shell equals true. Semgrep Guardian blocks the write before it lands. Instead of guessing, the agent asks Senso, our team memory, and finds the lesson a teammate left. It applies that fix, the re-scan comes back clean, and the lesson use is logged.</aside>
     <div class="tag tl">loop 1 · catch</div>
     <div class="beat">
         <figure class="slot" data-beat="B1" data-src="" data-at="0">
@@ -328,19 +344,20 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Caught in<br><em>seconds.</em></div>
-            <div class="step" data-at="3"><span class="n">01</span><span>Guardian blocks the write</span></div>
-            <div class="step" data-at="9"><span class="n">02</span><span>Agent asks Senso, not the internet</span></div>
-            <div class="step" data-at="15"><span class="n">03</span><span>Applies the team's fix</span></div>
+            <div class="step" data-at="6"><span class="n">01</span><span>Guardian blocks the write</span></div>
+            <div class="step" data-at="11"><span class="n">02</span><span>Agent asks Senso, not the internet</span></div>
+            <div class="step" data-at="18.5"><span class="n">03</span><span>Applies the team's fix</span></div>
             <div class="step" data-at="21"><span class="n">04</span><span>Clean scan, lesson use logged</span></div>
         </div>
     </div>
 </section>
 
 <!-- ===========================================
-     SLIDE 6 · B2+B3 THREE STRIKES (1:08–1:25)
+     SLIDE 6 · B2+B3 THREE STRIKES (1:13–1:30)
      Media: PR with red semgrep/repo-rules, then the needs-human label + comment.
      =========================================== -->
 <section class="slide" data-duration="17">
+    <aside class="notes">Some mistakes slip through to a pull request. Semgrep AppSec checks every PR. If it fails three times, the agents stop. No infinite loop. The PR is labeled needs-human.</aside>
     <div class="tag tl">loop 2 · escalate</div>
     <div class="beat">
         <figure class="slot" data-beat="B2-B3" data-src="" data-at="0">
@@ -349,21 +366,22 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
         <div class="rail">
             <div class="h-md" data-at="0.4">Three strikes.<br><em>Then a human.</em></div>
             <div class="strikes">
-                <div class="strike" data-at="3">✗</div>
-                <div class="strike" data-at="6">✗</div>
-                <div class="strike" data-at="9">✗</div>
+                <div class="strike" data-at="6.5">✗</div>
+                <div class="strike" data-at="7.5">✗</div>
+                <div class="strike" data-at="8.5">✗</div>
             </div>
-            <div class="label-pill cue-pop" data-at="10.5">needs-human</div>
-            <div class="step" data-at="12"><span class="n">→</span><span>Agents stop pushing. No infinite loop.</span></div>
+            <div class="label-pill cue-pop" data-at="13">needs-human</div>
+            <div class="step" data-at="10"><span class="n">→</span><span>Agents stop pushing. No infinite loop.</span></div>
         </div>
     </div>
 </section>
 
 <!-- ===========================================
-     SLIDE 7 · B4 HUMAN IN THE LOOP (1:25–1:52)
+     SLIDE 7 · B4 HUMAN IN THE LOOP (1:30–1:56)
      Media: Slack question from the pr-decision agent, the human's reply, the confirmation.
      =========================================== -->
-<section class="slide" data-duration="27">
+<section class="slide" data-duration="26">
+    <aside class="notes">Now a human steps in, but only once, and with context. Our Guild agent posts one question in Slack: what was tried, which rules failed, and what team memory says. The human replies with one word: continue, rerun, guardrail, or stop. The agent acts on it and confirms.</aside>
     <div class="tag tl">loop 2 · human in the loop</div>
     <div class="beat">
         <figure class="slot" data-beat="B4" data-src="" data-at="0">
@@ -371,22 +389,23 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">One question.<br><em>One decision.</em></div>
-            <div class="step" data-at="4"><span class="n">01</span><span>Context gathered from traces and team memory</span></div>
-            <div class="step" data-at="10"><span class="n">02</span><span>The human picks one:</span></div>
-            <div class="chips" data-at="11">
+            <div class="step" data-at="6"><span class="n">01</span><span>Context gathered from traces and team memory</span></div>
+            <div class="step" data-at="15"><span class="n">02</span><span>The human picks one:</span></div>
+            <div class="chips" data-at="17">
                 <span class="chip pick">continue</span><span class="chip">rerun</span><span class="chip">guardrail</span><span class="chip">stop</span>
             </div>
-            <div class="step" data-at="18"><span class="n">03</span><span>The agent acts on it and confirms</span></div>
+            <div class="step" data-at="21"><span class="n">03</span><span>The agent acts on it and confirms</span></div>
         </div>
     </div>
 </section>
 
 <!-- ===========================================
-     SLIDE 8 · B5 LEARN (1:52–2:20)
+     SLIDE 8 · B5 LEARN (1:56–2:22)
      Media: trigger row → Guild session → new LESSON doc in Senso.
      Say on screen if the trigger was manual.
      =========================================== -->
-<section class="slide" data-duration="28">
+<section class="slide" data-duration="26">
+    <aside class="notes">Meanwhile, the third loop runs. Every tool call and every scan is traced into ClickHouse. When a failure pattern shows up, ClickHouse wakes a Guild agent. It reads the traces and writes a new lesson into Senso. Versioned, never overwritten, so we always know why an idea changed.</aside>
     <div class="tag tl">loop 3 · learn</div>
     <div class="beat">
         <figure class="slot" data-beat="B5" data-src="" data-at="0">
@@ -396,22 +415,23 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
             <div class="h-md" data-at="0.4">Failures become<br><em>memory.</em></div>
             <div class="pipe">
                 <div class="node" data-at="3">every tool call + scan<small>traced to ClickHouse</small></div>
-                <div class="wire" data-at="5"></div>
-                <div class="node" data-at="6">failure pattern spotted<small>ClickHouse → Guild</small></div>
-                <div class="wire" data-at="8"></div>
-                <div class="node" data-at="9">Guild agent writes the lesson<small>trace-to-memory</small></div>
-                <div class="wire" data-at="11"></div>
-                <div class="node doc" data-at="12">LESSON-…-V1.md<small>saved to Senso · versioned, never overwritten</small></div>
+                <div class="wire" data-at="7.5"></div>
+                <div class="node" data-at="8">failure pattern spotted<small>ClickHouse → Guild</small></div>
+                <div class="wire" data-at="13"></div>
+                <div class="node" data-at="13.5">Guild agent writes the lesson<small>trace-to-memory</small></div>
+                <div class="wire" data-at="16"></div>
+                <div class="node doc" data-at="17">LESSON-…-V1.md<small>saved to Senso · versioned, never overwritten</small></div>
             </div>
         </div>
     </div>
 </section>
 
 <!-- ===========================================
-     SLIDE 9 · B6 PAYOFF (2:20–2:40)
+     SLIDE 9 · B6 PAYOFF (2:22–2:40)
      Media: fresh session finds the new lesson, one fix push, green checks.
      =========================================== -->
-<section class="slide" data-duration="20">
+<section class="slide" data-duration="18">
+    <aside class="notes">And here's the payoff. A brand-new session hits the same mistake. It finds yesterday's lesson, fixes it on the first push, and the checks go green. Three failures before. One push after.</aside>
     <div class="tag tl">the payoff</div>
     <div class="beat">
         <figure class="slot" data-beat="B6" data-src="" data-at="0">
@@ -420,8 +440,8 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
         <div class="rail">
             <div class="h-md" data-at="0.4">Same mistake.<br>New agent.<br><em>First try.</em></div>
             <div class="versus">
-                <div class="col" data-at="5"><div class="big red">3</div><div class="cap">failed runs before</div></div>
-                <div class="col" data-at="8"><div class="big mint">1</div><div class="cap">push after</div></div>
+                <div class="col" data-at="13"><div class="big red">3</div><div class="cap">failed runs before</div></div>
+                <div class="col" data-at="14.8"><div class="big mint">1</div><div class="cap">push after</div></div>
             </div>
         </div>
     </div>
@@ -432,20 +452,22 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
      Numbers are measured from agent_traces.events on 2026-10-09; refresh before recording.
      =========================================== -->
 <section class="slide" data-duration="20">
+    <aside class="notes">So far, we've traced over five hundred tool calls and five hundred security scans. Every one makes the next agent a little smarter. token-wise. Fail once. Never twice.</aside>
     <div class="center" style="gap: 64px;">
         <div class="stats">
             <div class="stat" data-at="0.5"><div class="num" data-count-to="554">0</div><div class="lbl">tool calls traced</div><div class="src">measured</div></div>
-            <div class="stat" data-at="1.3"><div class="num" data-count-to="553">0</div><div class="lbl">security scans</div><div class="src">measured</div></div>
-            <div class="stat" data-at="2.1"><div class="num">3</div><div class="lbl">strikes, then a human</div><div class="src">policy</div></div>
+            <div class="stat" data-at="3"><div class="num" data-count-to="553">0</div><div class="lbl">security scans</div><div class="src">measured</div></div>
+            <div class="stat" data-at="6"><div class="num">3</div><div class="lbl">strikes, then a human</div><div class="src">policy</div></div>
         </div>
-        <div class="h-xl" data-at="4">Fail once.<br><em>Never twice.</em></div>
-        <div class="stackline" data-at="7">token-wise · Semgrep · Senso · ClickHouse · Guild · Slack · Claude Code · Codex</div>
+        <div class="h-xl" data-at="12.8">Fail once.<br><em>Never twice.</em></div>
+        <div class="stackline" data-at="12">token-wise · Semgrep · Senso · ClickHouse · Guild · Slack · Claude Code · Codex</div>
     </div>
 </section>
 
 </main>
 </div>
 
+<div class="prompter" id="prompter" aria-live="polite"><div class="meta" id="prompterMeta"></div><div id="prompterText"></div></div>
 <div class="progress" id="progress"></div>
 <nav class="deck-controls" id="controls" aria-label="Deck status">0:00 / 3:00 · paused · P play</nav>
 
@@ -509,6 +531,8 @@ class SlidePresentation {
             if (e.key === 'p' || e.key === 'P') this.playing ? this.pause() : this.play();
             if (e.key === 'r' || e.key === 'R') { this.showSlide(0); this.play(); }
             if (e.key === 'h' || e.key === 'H') document.body.classList.toggle('no-chrome');
+            if (e.key === 'n' || e.key === 'N') { document.body.classList.toggle('show-prompter'); this.renderScript(); }
+            if (e.key === 's' || e.key === 'S') this.openPresenter();
         });
         let x0 = null;
         addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
@@ -594,10 +618,50 @@ class SlidePresentation {
     renderStatus() {
         const before = this.durations.slice(0, this.current).reduce((a, b) => a + b, 0);
         const now = before + (this.playing ? this.slideTime : 0);
-        const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
         document.getElementById('progress').style.width = `${(now / this.total) * 100}%`;
         document.getElementById('controls').textContent =
-            `${fmt(now)} / ${fmt(this.total)} · slide ${this.current + 1}/${this.slides.length} · ${this.playing ? 'playing' : 'paused · P play'}`;
+            `${this.fmt(now)} / ${this.fmt(this.total)} · slide ${this.current + 1}/${this.slides.length} · ${this.playing ? 'playing' : 'paused · P play'}`;
+        this.renderScript();
+    }
+
+    fmt(s) { return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; }
+    script(i) { return this.slides[i]?.querySelector('.notes')?.textContent.trim() || ''; }
+
+    /* Teleprompter bar + presenter window share one renderer */
+    renderScript() {
+        const left = Math.max(0, this.durations[this.current] - (this.playing ? this.slideTime : 0));
+        const elapsed = this.durations.slice(0, this.current).reduce((a, b) => a + b, 0) + (this.playing ? this.slideTime : 0);
+        const meta = `slide ${this.current + 1}/${this.slides.length} · ${Math.ceil(left)}s left · ${this.fmt(elapsed)} / ${this.fmt(this.total)}`;
+        if (document.body.classList.contains('show-prompter')) {
+            document.getElementById('prompterMeta').textContent = meta;
+            document.getElementById('prompterText').textContent = this.script(this.current);
+        }
+        const w = this.presenter;
+        if (w && !w.closed) {
+            w.document.getElementById('meta').textContent = `${meta} · ${this.playing ? 'playing' : 'paused'}`;
+            w.document.getElementById('now').textContent = this.script(this.current);
+            w.document.getElementById('next').textContent = this.script(this.current + 1) || '(end)';
+            w.document.getElementById('bar').style.width = `${100 - (left / this.durations[this.current]) * 100}%`;
+        }
+    }
+
+    /* Separate window so the script never appears in the recorded deck window */
+    openPresenter() {
+        if (this.presenter && !this.presenter.closed) { this.presenter.focus(); return; }
+        const w = window.open('', 'token-wise-presenter', 'width=1000,height=640');
+        if (!w) return;
+        w.document.title = 'Presenter · token-wise';
+        w.document.body.innerHTML = `
+            <style>
+              body { margin: 0; padding: 40px 56px; background: #0b0e13; color: #ede6d6; font: 400 40px/1.5 'Instrument Sans', sans-serif; }
+              #meta { font: 600 16px 'Martian Mono', monospace; color: #ffb000; letter-spacing: .12em; text-transform: uppercase; }
+              #track { height: 4px; background: #262d3a; margin: 14px 0 28px; } #bar { height: 4px; width: 0; background: #ffb000; }
+              #next { margin-top: 36px; font-size: 24px; color: #8a8f99; } #next::before { content: 'next → '; color: #ffb000; }
+            </style>
+            <div id="meta"></div><div id="track"><div id="bar"></div></div><div id="now"></div><div id="next"></div>`;
+        w.addEventListener('keydown', e => document.dispatchEvent(new KeyboardEvent('keydown', { key: e.key })));
+        this.presenter = w;
+        this.renderScript();
     }
 }
 

@@ -95,8 +95,8 @@ installed in the Guild workspace).
 |---|---|---|
 | `detect_session_end_mv` | a `session_end` whose segment has ≥ 5 tool calls | `session-retro` → `PLAYBOOK-<workflow>-V<n>` (most efficient path) |
 | `detect_pr_merged_mv` | a `github_pr` closed + merged with ≥ 5 traced calls on its head branch since the branch's last run | `workflow-canonizer` → `RUNBOOK-<workflow>-V<n>`, `status: proposed` |
-| `detect_thrash_mv` | ≥ 3 failed tool calls by one session in a 10-minute bucket | `loop-breaker` → `LESSON-loop-<goal>-V<n>` (only if a later call resolved it) |
-| `detect_volume_mv` | a live session passes another 40 tool calls; window = calls since its last checkpoint | `loop-breaker` (checkpoint; skips windows a thrash run owns) |
+| `detect_loops_mv` (thrash) | ≥ 3 failed tool calls by one session in a 10-minute bucket | `loop-breaker` → `LESSON-loop-<goal>-V<n>` (only if a later call resolved it) |
+| `detect_loops_mv` (volume) | a live session passes another 40 tool calls; window = calls since its last checkpoint. One row per refresh across both signals, thrash first, so loop-breaker runs never overlap | `loop-breaker` (checkpoint; skips windows a thrash run owns) |
 | `detect_guardrail_mv` | new Semgrep findings, failed CI runs, or force-pushes; at most one run per 30-minute bucket | `trace-to-memory` → `LESSON-*` + the CURRENT.md index |
 
 Workflows (fixed list): `feature`, `bugfix`, `ci-fix`, `security-fix`, `other` (`other` writes nothing).
@@ -120,8 +120,9 @@ The next canonizer version stays `proposed` and lists its `## Changes from appro
   Check delivery in `system.query_views_log` (`view_name = 'agent_traces.trigger_requests_mv'`).
 - **SELECT aliases are visible in WHERE.** `'loop-breaker' AS agent` shadowed `events.agent`, so the filter
   `agent IN ('claude','codex')` matched nothing. Qualify source columns (`ev.agent`) when an alias reuses a name.
-- **Concurrent writers create duplicate versions.** Two runs that both see no `-V1` both create it. The PR
-  detector sends one PR per refresh, and loop-breaker checkpoints skip windows already sent as thrash.
+- **Concurrent writers create duplicate versions.** Two runs that both see no `-V1` both create it. Each agent
+  gets at most one trigger per refresh (thrash and volume share one detector), and loop-breaker checkpoints skip
+  windows already sent as thrash.
 - **Detectors run immediately on creation** and backfill the last 1–7 days. Insert a row with the same
   `dedup_key` and `agent = ''` to hold one back (the routing view skips empty agents).
 

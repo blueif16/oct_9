@@ -98,68 +98,71 @@ HAVING tool_call_count >= 5
 ORDER BY window_end
 LIMIT 1;
 
--- Detector 3: thrash → loop-breaker (writes efficiency LESSON docs).
--- ≥ 3 failed tool calls by one session within a 10-minute bucket. Failures, not exact repeats: agents rewrite
--- a failing command each retry, so identical repeats rarely fail (measured 2026-10-09). Same limit of 3 as
--- the senso-lessons skill, which counts rewritten calls. No settle delay: the lesson is wanted while it helps.
-CREATE MATERIALIZED VIEW IF NOT EXISTS agent_traces.detect_thrash_mv
+-- Detector 3: wasted loops → loop-breaker (writes LESSON-loop-<goal> docs). Two signals, one detector:
+--   thrash: ≥ 3 failed tool calls by one session within a 10-minute bucket. Failures, not exact repeats:
+--     agents rewrite a failing command each retry, so identical repeats rarely fail (measured 2026-10-09).
+--     Same limit of 3 as the senso-lessons skill. No settle delay: the lesson is wanted while it helps.
+--   volume (checkpoint): a live session passes another 40 tool calls (guessed step). Live = active in the
+--     last 30 min with no session_end after its last event. The window starts at the session's previous
+--     checkpoint, so each run reviews only new calls.
+-- One detector so loop-breaker runs never overlap: two concurrent runs both miss each other's new lesson and
+-- write duplicates (measured 2026-10-09). Thrash wins when both are pending.
+CREATE MATERIALIZED VIEW IF NOT EXISTS agent_traces.detect_loops_mv
 REFRESH EVERY 5 MINUTE APPEND TO agent_traces.trigger_requests AS
-SELECT
-  now64(3) AS requested_at,
-  'thrash' AS source,
-  'loop-breaker' AS agent,
-  concat('thrash:', session_id, ':', toString(bucket)) AS dedup_key,
-  count() AS tool_call_count,
-  bucket AS window_start,
-  bucket + INTERVAL 10 MINUTE AS window_end,
-  format('Run loop-breaker mode thrash for session {}, window {} to {} UTC.', session_id, toString(window_start), toString(window_end)) AS text,
-  toJSONString(map(
-    'session', session_id, 'branch', any(git_branch), 'failed_tool_calls', toString(count()),
-    'tools', arrayStringConcat(groupUniqArray(5)(tool_name), ','))) AS context
-FROM agent_traces.events AS ev FINAL
-WHERE ev.event_type = 'tool_call' AND ev.hook_event = 'PostToolUseFailure' AND ev.agent IN ('claude', 'codex')
-  AND inserted_at > now64(3) - INTERVAL 1 DAY
-GROUP BY session_id, toStartOfInterval(ts, INTERVAL 10 MINUTE) AS bucket
-HAVING count() >= 3
-   AND dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'thrash')
-ORDER BY window_start
-LIMIT 1;
-
--- Detector 4: volume → loop-breaker checkpoint of a live session.
--- Fires each time a session passes another 40 tool calls (guessed step). Live = active in the last 30 min
--- and no session_end after its last event; ended sessions go to session-retro instead. The window starts at
--- this session's previous checkpoint, so each run only reviews the new calls.
-CREATE MATERIALIZED VIEW IF NOT EXISTS agent_traces.detect_volume_mv
-REFRESH EVERY 5 MINUTE APPEND TO agent_traces.trigger_requests AS
-WITH live AS (
-  SELECT session_id, countIf(event_type = 'tool_call') AS calls, max(ts) AS last_ts, any(git_branch) AS branch,
-         maxIf(ts, event_type = 'session_end') AS ended_at, min(ts) AS first_ts
-  FROM agent_traces.events FINAL
-  WHERE agent IN ('claude', 'codex') AND session_id != '' AND inserted_at > now64(3) - INTERVAL 1 DAY
-  GROUP BY session_id
-  HAVING calls >= 40 AND ended_at < last_ts AND last_ts > now64(3) - INTERVAL 30 MINUTE
-),
-prev AS (
-  SELECT JSONExtractString(context, 'session') AS session_id, max(window_end) AS prev_end
-  FROM agent_traces.trigger_requests WHERE source = 'volume' GROUP BY session_id
+SELECT * FROM (
+  (
+    SELECT
+      now64(3) AS requested_at,
+      'thrash' AS source,
+      'loop-breaker' AS agent,
+      concat('thrash:', session_id, ':', toString(bucket)) AS dedup_key,
+      count() AS tool_call_count,
+      bucket AS window_start,
+      bucket + INTERVAL 10 MINUTE AS window_end,
+      format('Run loop-breaker mode thrash for session {}, window {} to {} UTC.', session_id, toString(window_start), toString(window_end)) AS text,
+      toJSONString(map(
+        'session', session_id, 'branch', any(git_branch), 'failed_tool_calls', toString(count()),
+        'tools', arrayStringConcat(groupUniqArray(5)(tool_name), ','))) AS context
+    FROM agent_traces.events AS ev FINAL
+    WHERE ev.event_type = 'tool_call' AND ev.hook_event = 'PostToolUseFailure' AND ev.agent IN ('claude', 'codex')
+      AND inserted_at > now64(3) - INTERVAL 1 DAY
+    GROUP BY session_id, toStartOfInterval(ts, INTERVAL 10 MINUTE) AS bucket
+    HAVING count() >= 3
+       AND dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'thrash')
+  )
+  UNION ALL
+  (
+    WITH live AS (
+      SELECT session_id, countIf(event_type = 'tool_call') AS calls, max(ts) AS last_ts, any(git_branch) AS branch,
+             maxIf(ts, event_type = 'session_end') AS ended_at, min(ts) AS first_ts
+      FROM agent_traces.events FINAL
+      WHERE agent IN ('claude', 'codex') AND session_id != '' AND inserted_at > now64(3) - INTERVAL 1 DAY
+      GROUP BY session_id
+      HAVING calls >= 40 AND ended_at < last_ts AND last_ts > now64(3) - INTERVAL 30 MINUTE
+    ),
+    prev AS (
+      SELECT JSONExtractString(context, 'session') AS session_id, max(window_end) AS prev_end
+      FROM agent_traces.trigger_requests WHERE source = 'volume' GROUP BY session_id
+    )
+    SELECT
+      now64(3) AS requested_at,
+      'volume' AS source,
+      'loop-breaker' AS agent,
+      concat('volume:', l.session_id, ':', toString(intDiv(l.calls, 40))) AS dedup_key,
+      l.calls AS tool_call_count,
+      if(p.prev_end > l.first_ts, p.prev_end, l.first_ts) AS window_start,
+      l.last_ts AS window_end,
+      format('Run loop-breaker mode checkpoint for session {}, window {} to {} UTC.', l.session_id, toString(window_start), toString(window_end)) AS text,
+      toJSONString(map('session', l.session_id, 'branch', l.branch, 'session_tool_calls', toString(l.calls))) AS context
+    FROM live AS l
+    LEFT JOIN prev AS p ON p.session_id = l.session_id
+    WHERE dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'volume')
+  )
 )
-SELECT
-  now64(3) AS requested_at,
-  'volume' AS source,
-  'loop-breaker' AS agent,
-  concat('volume:', l.session_id, ':', toString(intDiv(l.calls, 40))) AS dedup_key,
-  l.calls AS tool_call_count,
-  if(p.prev_end > l.first_ts, p.prev_end, l.first_ts) AS window_start,
-  l.last_ts AS window_end,
-  format('Run loop-breaker mode checkpoint for session {}, window {} to {} UTC.', l.session_id, toString(window_start), toString(window_end)) AS text,
-  toJSONString(map('session', l.session_id, 'branch', l.branch, 'session_tool_calls', toString(l.calls))) AS context
-FROM live AS l
-LEFT JOIN prev AS p ON p.session_id = l.session_id
-WHERE dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'volume')
-ORDER BY window_end
+ORDER BY source = 'thrash' DESC, window_end
 LIMIT 1;
 
--- Detector 5: guardrail signals → trace-to-memory (LESSON docs + the CURRENT.md index).
+-- Detector 4: guardrail signals → trace-to-memory (LESSON docs + the CURRENT.md index).
 -- New Semgrep findings, failed CI runs, or force-pushes since the last guardrail run, batched to at most one
 -- run per 30-minute bucket. Watermark on inserted_at (late rows still count); the agent is told to look back
 -- to the earliest new signal's ts.

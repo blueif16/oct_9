@@ -68,7 +68,7 @@ FAIL_LIMIT=3                                    # failures before you must consu
    ```bash
    gh pr view <pr> --json labels --jq '.labels[].name' | grep -x needs-human
    ```
-   If it prints `needs-human`, stop. Do not push again. Give the user the PR URL, the findings, and the fixes you tried. Resume only after a human removes the label.
+   If it prints `needs-human`, stop. Do not push again. If the escalate comment names your session as the asker, follow the `pr-decision` skill. Otherwise give the user the PR URL, the findings, and the fixes you tried. Resume only after a human removes the label; the newest `Human decision via Slack` comment on the PR says what to do.
 3. Otherwise, download the findings from the failed run:
    ```bash
    RUN=$(gh run list --workflow Semgrep --branch <branch> --status failure --limit 1 --json databaseId --jq '.[0].databaseId')

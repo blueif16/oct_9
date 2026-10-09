@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.actor != 'dependabot[bot]')
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       # pipx, not the semgrep/semgrep container: shared runners hit Docker Hub's anonymous pull rate limit.
       - run: pipx install semgrep
       - name: Require SEMGREP_APP_TOKEN
@@ -34,7 +34,7 @@ jobs:
       - run: semgrep ci --json-output=semgrep-results.json
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: semgrep-results

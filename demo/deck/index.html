@@ -359,7 +359,7 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
      Replace with the B2–B3 recording once B3 (needs-human) is captured.
      =========================================== -->
 <section class="slide" data-duration="17">
-    <aside class="notes">Some mistakes reach a pull request. Our own repo rule, written from the team's requirements, catches an unredacted trace payload that Semgrep's default scan missed. Three failures and the agents stop. No infinite loop: the PR is labeled needs-human.</aside>
+    <aside class="notes">Some mistakes reach a pull request. Our own repo rule catches an unredacted trace payload that Semgrep's default scan missed. Three failures, and the agents stop. The PR is labeled needs-human.</aside>
     <div class="tag tl">loop 2 · escalate</div>
     <div class="beat">
         <figure class="slot" data-beat="B2-B3" data-src="media/b2-repo-rules-fail.png" data-at="0">
@@ -369,12 +369,12 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
             <div class="h-md" data-at="0.4">Three strikes.<br><em>Then a human.</em></div>
             <div class="step" data-at="3"><span class="n">!</span><span>Our repo rule catches what Semgrep's scan missed</span></div>
             <div class="strikes">
-                <div class="strike" data-at="6.5">✗</div>
-                <div class="strike" data-at="7.5">✗</div>
-                <div class="strike" data-at="8.5">✗</div>
+                <div class="strike" data-at="10.5">✗</div>
+                <div class="strike" data-at="11">✗</div>
+                <div class="strike" data-at="11.5">✗</div>
             </div>
-            <div class="label-pill cue-pop" data-at="13">needs-human</div>
-            <div class="step" data-at="10"><span class="n">→</span><span>Agents stop pushing. No infinite loop.</span></div>
+            <div class="label-pill cue-pop" data-at="15">needs-human</div>
+            <div class="step" data-at="13"><span class="n">→</span><span>Agents stop pushing. No infinite loop.</span></div>
         </div>
     </div>
 </section>

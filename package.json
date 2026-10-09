@@ -6,6 +6,7 @@
     "test": "node --test \"tracing/test/**/*.test.mjs\"",
     "prepare": "git config core.hooksPath .githooks",
     "trace:schema": "node tracing/apply-schema.mjs",
-    "trace:webhook": "node tracing/apply-webhook.mjs"
+    "trace:webhook": "node tracing/apply-webhook.mjs",
+    "trace:triggers": "node tracing/apply-schema.mjs triggers.sql"
   }
 }

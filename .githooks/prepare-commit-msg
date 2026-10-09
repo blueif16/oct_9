@@ -1,0 +1,6 @@
+#!/bin/sh
+# Link each agent-made commit to its traced session, so GitHub PR/CI/merge events join back to the trace.
+# Codex: session env var not yet confirmed, so only Claude Code sessions are tagged for now.
+[ -n "$CLAUDE_CODE_SESSION_ID" ] || exit 0
+git interpret-trailers --in-place --if-exists doNothing \
+  --trailer "Agent-Session: claude:$CLAUDE_CODE_SESSION_ID" "$1"

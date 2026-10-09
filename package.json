@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test \"tracing/test/**/*.test.mjs\""
+    "test": "node --test \"tracing/test/**/*.test.mjs\"",
+    "prepare": "git config core.hooksPath .githooks"
   }
 }

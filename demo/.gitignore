@@ -1,1 +1,4 @@
-raw/
+# Raw takes stay local; image frames the deck uses are committed.
+raw/*.mov
+raw/*.mp4
+raw/*.webm

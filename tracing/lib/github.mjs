@@ -1,7 +1,7 @@
 import { row } from './events.mjs';
 import { redact } from './redact.mjs';
 
-const TRAILER = /^Agent-Session:\s*(\w+):(\S+)\s*$/m;
+export const TRAILER = /^Agent-Session:\s*(\w+):(\S+)\s*$/m;
 
 const ghRow = (fields, payload) => row({ agent: 'github', ...fields, payload: JSON.stringify(redact(payload)) });
 

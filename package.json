@@ -7,6 +7,7 @@
     "prepare": "git config core.hooksPath .githooks",
     "trace:schema": "node tracing/apply-schema.mjs",
     "trace:webhook": "node tracing/apply-webhook.mjs",
-    "trace:triggers": "node tracing/apply-schema.mjs triggers.sql"
+    "trace:triggers": "node tracing/apply-schema.mjs triggers.sql",
+    "policy:guild": "node policies/pr-decision/build-guild-prompt.mjs"
   }
 }

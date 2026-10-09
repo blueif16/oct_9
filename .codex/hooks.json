@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/tracing/hook.mjs\" codex", "async": true }] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/tracing/hook.mjs\" codex", "async": true }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Bash|apply_patch|Edit|Write", "hooks": [{ "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/tracing/hook.mjs\" codex", "async": true }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/tracing/hook.mjs\" codex", "async": true }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/tracing/hook.mjs\" codex", "timeout": 3 }] }
+    ]
+  }
+}

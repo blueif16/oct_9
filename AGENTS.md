@@ -27,6 +27,14 @@ senso kb patch-raw NODE_ID --data '{"text":"full revised text"}'
 senso kb children FOLDER_ID                 # list the folder
 ```
 
+## Tool-call tracing (ClickHouse)
+
+Hooks (`.claude/settings.json`, `.codex/hooks.json`) send every session, prompt, Edit/Write/Bash call and Semgrep result to ClickHouse `agent_traces.events`. Payloads are redacted before they leave the machine; while ClickHouse is unreachable, rows queue in `.trace/spool.jsonl`.
+
+- Query traces with the read-only `clickhouse` MCP server. NEVER print `~/.config/oct9/clickhouse.env`; it holds the database password.
+- When you hand a lesson to an agent, record it: `node tracing/hook.mjs context-injected --lesson-id <ID>`.
+- Commits made in a Claude session get an `Agent-Session:` trailer automatically; don't remove it.
+
 ## Security scanning (Semgrep Guardian)
 
 Semgrep Guardian scans every file an agent writes (Claude Code plugin + Codex plugin). When it returns findings, fix them before moving on; never suppress a finding without telling the user.

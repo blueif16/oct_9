@@ -1,0 +1,10 @@
+{
+  "name": "oct_9",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tracing/test/**/*.test.mjs\"",
+    "prepare": "git config core.hooksPath .githooks",
+    "trace:schema": "node tracing/apply-schema.mjs"
+  }
+}

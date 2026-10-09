@@ -117,3 +117,4 @@ VALUES ('manual', 'trace-to-memory', 'Run rule lessons-from-failures for the las
 Credentials live in `~/.config/oct9/` (`clickhouse.env`, `guild.env`), never in the repo. One Guild API trigger key
 (`GUILD_TRIGGER_KEY`) serves every agent: the request's `agent_id` picks the agent, which must be published and
 installed in the workspace (`guild workspace agent add owner~agent`).
+

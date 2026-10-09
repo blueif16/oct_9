@@ -20,6 +20,20 @@ test('PostToolUse becomes a tool_call row with ids, tool name and redacted input
   assert.ok(!ev.payload.includes(secret));
 });
 
+test('PostToolUseFailure becomes a tool_call row marked by hook_event, with the redacted error', () => {
+  const secret = 'ghp_' + 'a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8';
+  const ev = toEvent('claude', { ...common, hook_event_name: 'PostToolUseFailure', tool_name: 'Bash', tool_use_id: 'toolu_2',
+    tool_input: { command: 'npm test' }, error: `Exit code 1 token=${secret}`, is_interrupt: false }, ctx);
+  assert.equal(ev.event_type, 'tool_call');
+  assert.equal(ev.hook_event, 'PostToolUseFailure');
+  assert.equal(ev.tool_use_id, 'toolu_2');
+  const payload = JSON.parse(ev.payload);
+  assert.equal(payload.tool_input.command, 'npm test');
+  assert.match(payload.error, /^Exit code 1/);
+  assert.equal(payload.is_interrupt, false);
+  assert.ok(!ev.payload.includes(secret));
+});
+
 test('maps each lifecycle hook to its event type', () => {
   const cases = { SessionStart: 'session_start', UserPromptSubmit: 'user_prompt', Stop: 'stop', SessionEnd: 'session_end' };
   for (const [hook, type] of Object.entries(cases)) {

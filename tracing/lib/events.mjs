@@ -7,6 +7,7 @@ const EVENT_TYPES = {
   SessionStart: 'session_start',
   UserPromptSubmit: 'user_prompt',
   PostToolUse: 'tool_call',
+  PostToolUseFailure: 'tool_call', // same type so call counts stay complete; hook_event marks the failure
   Stop: 'stop',
   SessionEnd: 'session_end',
 };
@@ -16,6 +17,7 @@ const PAYLOAD_FIELDS = {
   SessionStart: ['source', 'model'],
   UserPromptSubmit: ['prompt'],
   PostToolUse: ['tool_input', 'tool_response', 'duration_ms'],
+  PostToolUseFailure: ['tool_input', 'error', 'is_interrupt'],
   Stop: ['last_assistant_message', 'stop_hook_active'],
   SessionEnd: ['reason'],
 };

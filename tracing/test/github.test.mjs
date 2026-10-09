@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { githubRows } from '../lib/github.mjs';
+import { githubRows, ciSemgrepRow } from '../lib/github.mjs';
 
 const repository = { full_name: 'blueif16/oct_9' };
 
@@ -44,4 +44,34 @@ test('re-delivered events produce the same event_id so they dedupe', () => {
 
 test('unrelated events produce no rows', () => {
   assert.deepEqual(githubRows('issues', { action: 'opened', repository }), []);
+});
+
+const ciRun = { id: 38002749824, run_attempt: 1, name: 'Semgrep', head_sha: 'a44dc06', head_branch: 'demo/proof-repo-rules',
+  updated_at: '2026-10-09T23:08:35Z', html_url: 'https://github.com/r/actions/runs/38002749824' };
+// Shape of `semgrep scan --json` output (fixture), trimmed to fields Semgrep always emits.
+const findings = { results: [
+  { check_id: 'semgrep.rules.trace-payload-must-be-redacted', path: 'demo/fixtures/unredacted-trace-payload.mjs', start: { line: 4 }, extra: { severity: 'ERROR', message: 'redact it' } },
+  { check_id: 'semgrep.rules.trace-payload-must-be-redacted', path: 'tracing/x.mjs', start: { line: 9 }, extra: { severity: 'ERROR', message: 'redact it' } },
+], errors: [] };
+
+test('CI Semgrep results become a semgrep_scan row carrying rule ids, severities and files on the PR branch', () => {
+  const r = ciSemgrepRow('blueif16/oct_9', ciRun, 'semgrep-repo-rules-results', findings);
+  assert.equal(r.event_type, 'semgrep_scan');
+  assert.equal(r.agent, 'github');
+  assert.equal(r.git_branch, 'demo/proof-repo-rules');
+  assert.equal(r.git_sha, 'a44dc06');
+  assert.equal(r.semgrep_outcome, 'findings');
+  assert.equal(r.semgrep_findings, 2);
+  assert.deepEqual(r.semgrep_rules, ['semgrep.rules.trace-payload-must-be-redacted']);
+  assert.deepEqual(r.semgrep_severities, ['ERROR']);
+  assert.deepEqual(r.semgrep_files, ['demo/fixtures/unredacted-trace-payload.mjs', 'tracing/x.mjs']);
+  assert.equal(r.event_id, 'gh-sg:blueif16/oct_9:38002749824:1:semgrep-repo-rules-results');
+  assert.equal(JSON.parse(r.payload).run_id, 38002749824);
+});
+
+test('CI Semgrep results with no findings become a no_findings row', () => {
+  const r = ciSemgrepRow('blueif16/oct_9', ciRun, 'semgrep-results', { results: [], errors: [] });
+  assert.equal(r.semgrep_outcome, 'no_findings');
+  assert.equal(r.semgrep_findings, 0);
+  assert.deepEqual(r.semgrep_rules, []);
 });

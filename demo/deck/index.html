@@ -320,7 +320,7 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
             <div class="when">minutes · on every PR</div>
             <h3>Escalate</h3>
             <p>Three failed scans and the agents stop. A human gets one clear question.</p>
-            <div class="stack">Semgrep AppSec<br>Guild agent → Slack</div>
+            <div class="stack">Semgrep AppSec + repo rules<br>Guild agent → Slack</div>
         </div>
         <div class="loop" data-at="7.8">
             <div class="when">in the background</div>
@@ -355,16 +355,19 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 <!-- ===========================================
      SLIDE 6 · B2+B3 THREE STRIKES (1:13–1:30)
      Media: PR with red semgrep/repo-rules, then the needs-human label + comment.
+     Interim still: media/b2-repo-rules-fail.png (real run, PR #5: semgrep/ci green, semgrep/repo-rules red).
+     Replace with the B2–B3 recording once B3 (needs-human) is captured.
      =========================================== -->
 <section class="slide" data-duration="17">
-    <aside class="notes">Some mistakes slip through to a pull request. Semgrep AppSec checks every PR. If it fails three times, the agents stop. No infinite loop. The PR is labeled needs-human.</aside>
+    <aside class="notes">Some mistakes reach a pull request. Our own repo rule, written from the team's requirements, catches an unredacted trace payload that Semgrep's default scan missed. Three failures and the agents stop. No infinite loop: the PR is labeled needs-human.</aside>
     <div class="tag tl">loop 2 · escalate</div>
     <div class="beat">
-        <figure class="slot" data-beat="B2-B3" data-src="" data-at="0">
+        <figure class="slot" data-beat="B2-B3" data-src="media/b2-repo-rules-fail.png" data-at="0">
             <div class="ph"><b>B2 · B3</b><span>PR check fails on a blocking rule → 3rd failed run → needs-human label + escalation comment</span></div>
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Three strikes.<br><em>Then a human.</em></div>
+            <div class="step" data-at="3"><span class="n">!</span><span>Our repo rule catches what Semgrep's scan missed</span></div>
             <div class="strikes">
                 <div class="strike" data-at="6.5">✗</div>
                 <div class="strike" data-at="7.5">✗</div>

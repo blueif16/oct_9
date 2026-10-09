@@ -13,6 +13,9 @@ const TEXT_RULES = [
   [/\btgr_[A-Za-z0-9]{8,}/g, MASK],                                            // Senso
   [/\b(Bearer|Basic)\s+[\w\-.~+/=]{8,}/gi, `$1 ${MASK}`],
   [/(\b[a-z][\w+.-]*:\/\/[^\s:/@]+:)[^\s@/]+@/gi, `$1${MASK}@`],               // scheme://user:pass@
+  [/((?:^|\s)(?:-u|--user)(?:\s+|=)(["']?)[^\s:"']+:)[^\s"']+/g, `$1${MASK}`],  // curl -u/--user name:pass
+  // Header names ending in a secret segment: X-ClickHouse-Key, X-Api-Key, x-auth-token (not Author:, key:).
+  [/(\b(?:[\w-]*[-_](?:key|token|secret)|token|secret)\s*:\s*)[^\s"']+/gi, `$1${MASK}`],
   // NAME=value or name: value where the name looks secret-bearing.
   [/(\b\w*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|APIKEY|ACCESS_KEY|PRIVATE_KEY)\w*\s*[=:]\s*)(["']?)[^\s"']+\2/gi, `$1$2${MASK}$2`],
 ];

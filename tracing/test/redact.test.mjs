@@ -62,3 +62,21 @@ test('leaves ordinary code and text unchanged', () => {
   const code = 'const total = items.reduce((a, b) => a + b, 0);\nreturn subprocess.call(["ls", path])';
   assert.equal(redact(code), code);
 });
+
+test('redacts the password in curl basic-auth flags', () => {
+  for (const cmd of ["curl --user 'default:ybC~fakePw0' https://h:8443", 'curl -u default:ybC~fakePw0 https://h', 'curl --user="admin:ybC~fakePw0" x']) {
+    const out = redact(cmd);
+    assert.ok(!out.includes('ybC~fakePw0'), cmd);
+    assert.ok(out.includes('default:') || out.includes('admin:'), 'username stays readable');
+  }
+});
+
+test('redacts values of key-bearing HTTP headers like X-ClickHouse-Key', () => {
+  for (const h of ['-H "X-ClickHouse-Key: fakeKeyValue1"', "-H 'X-Api-Key: fakeKeyValue1'", 'x-auth-token: fakeKeyValue1']) {
+    assert.ok(!redact(h).includes('fakeKeyValue1'), h);
+  }
+});
+
+test('keeps ordinary "name: value" lines such as git author headers', () => {
+  for (const s of ['Author: Bob <bob@x.dev>', 'sorted by key: name', 'monkey: banana']) assert.equal(redact(s), s);
+});

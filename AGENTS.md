@@ -4,8 +4,8 @@ All agents in this repo (Claude Code, Codex, others) share one memory: a Senso k
 
 ## Shared memory (Senso)
 
-- FOLDER_ID: `TODO_FOLDER_ID`
-- CURRENT_ID (node ID of CURRENT.md): `TODO_CURRENT_ID`
+- FOLDER_ID: `11fcd627-2d7f-4d1f-9e44-a1c090d26ab5`
+- CURRENT_ID (node ID of CURRENT.md): `6485bd2d-b149-4f61-abd1-0a53f8113a20`
 
 If either ID above still reads `TODO_…`, Senso is not set up yet: say so to the user and continue without it. NEVER invent an ID.
 

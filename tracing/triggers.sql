@@ -5,6 +5,9 @@
 -- an insert-time MV only sees the rows of one INSERT, so it cannot count across a session.
 -- SELECT aliases are visible in WHERE: `'loop-breaker' AS agent` would shadow events.agent, so qualify
 -- source columns (ev.agent) whenever an output alias reuses a column name.
+-- ONE ROW PER REFRESH (LIMIT 1): the URL engine POSTs a whole insert block as one body, and Guild rejects a
+-- multi-row body with HTTP 400 (measured 2026-10-09; max_block_size=1 settings did not split it). A backlog
+-- drains one row per detector per 5 minutes.
 -- Every detector: reads events FINAL (collapses re-sent rows), skips dedup_keys already in trigger_requests,
 -- and precomputes `context` so the agent spends fewer queries.
 
@@ -45,7 +48,9 @@ INNER JOIN (SELECT * FROM agent_traces.events FINAL WHERE session_id IN (SELECT 
 WHERE e.ts > s.prev_end_ts AND e.ts <= s.end_ts
 GROUP BY s.session_id, s.end_id
 HAVING tool_call_count >= 5
-   AND dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'session_end');
+   AND dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'session_end')
+ORDER BY window_end
+LIMIT 1;
 
 -- Detector 2: PR merged → workflow-canonizer (writes RUNBOOK docs with status: proposed).
 -- A PR's sessions are the agent events recorded on its head branch (hooks stamp git_branch). The window
@@ -116,7 +121,9 @@ WHERE ev.event_type = 'tool_call' AND ev.hook_event = 'PostToolUseFailure' AND e
   AND inserted_at > now64(3) - INTERVAL 1 DAY
 GROUP BY session_id, toStartOfInterval(ts, INTERVAL 10 MINUTE) AS bucket
 HAVING count() >= 3
-   AND dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'thrash');
+   AND dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'thrash')
+ORDER BY window_start
+LIMIT 1;
 
 -- Detector 4: volume → loop-breaker checkpoint of a live session.
 -- Fires each time a session passes another 40 tool calls (guessed step). Live = active in the last 30 min
@@ -148,7 +155,9 @@ SELECT
   toJSONString(map('session', l.session_id, 'branch', l.branch, 'session_tool_calls', toString(l.calls))) AS context
 FROM live AS l
 LEFT JOIN prev AS p ON p.session_id = l.session_id
-WHERE dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'volume');
+WHERE dedup_key NOT IN (SELECT dedup_key FROM agent_traces.trigger_requests WHERE source = 'volume')
+ORDER BY window_end
+LIMIT 1;
 
 -- Detector 5: guardrail signals → trace-to-memory (LESSON docs + the CURRENT.md index).
 -- New Semgrep findings, failed CI runs, or force-pushes since the last guardrail run, batched to at most one

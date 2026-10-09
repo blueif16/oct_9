@@ -33,3 +33,20 @@ CREATE MATERIALIZED VIEW agent_traces.trigger_requests_mv TO agent_traces.guild_
 SELECT 'api_trigger' AS session_type, CAST(tuple(text), 'Tuple(text String)') AS agent_input
 FROM agent_traces.trigger_requests
 WHERE agent = 'trace-to-memory';
+
+-- session-retro: same pattern, its own Guild API trigger key (GUILD_TRIGGER_KEY_SESSION_RETRO in guild.env).
+-- The detector's context JSON is appended to the text so the agent starts with the precomputed counts.
+-- Skipped by `npm run trace:webhook` until that key exists.
+CREATE TABLE IF NOT EXISTS agent_traces.guild_webhook_session_retro
+(
+    session_type String,
+    agent_input  Tuple(text String)
+)
+ENGINE = URL('{{GUILD_URL}}', JSONEachRow,
+             headers('Authorization' = 'Basic {{GUILD_AUTH_SESSION_RETRO}}', 'Content-Type' = 'application/json'));
+
+DROP VIEW IF EXISTS agent_traces.trigger_requests_session_retro_mv;
+CREATE MATERIALIZED VIEW agent_traces.trigger_requests_session_retro_mv TO agent_traces.guild_webhook_session_retro AS
+SELECT 'api_trigger' AS session_type, CAST(tuple(concat(text, ' Context: ', context)), 'Tuple(text String)') AS agent_input
+FROM agent_traces.trigger_requests
+WHERE agent = 'session-retro';

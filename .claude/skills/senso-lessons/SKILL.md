@@ -1,6 +1,6 @@
 ---
 name: senso-lessons
-description: Ask the team's Senso memory for a lesson before retrying a failing approach, and handle Semgrep Guardian findings by looking up the matching Senso lesson first. TRIGGER when (a) the same tool call, command, or test has failed 3 times in this session, including retries where you rewrote the call, (b) Semgrep Guardian reports a finding on a file you wrote, or (c) the `semgrep/ci` check fails on a PR. Not for routine first-attempt errors.
+description: Ask the team's Senso memory for a lesson before retrying a failing approach, and handle Semgrep Guardian findings by looking up the matching Senso lesson first. TRIGGER when (a) the same tool call, command, or test has failed 3 times in this session, including retries where you rewrote the call, (b) Semgrep Guardian reports a finding on a file you wrote, or (c) the `semgrep/ci` or `semgrep/repo-rules` check fails on a PR. Not for routine first-attempt errors.
 ---
 
 # Senso lessons: stop retrying, ask the team memory
@@ -14,7 +14,7 @@ FAIL_LIMIT=3                                    # failures before you must consu
 
 ## When this applies (observable triggers only)
 - **Repeated failure.** Count the failures of one goal in this session, for example "run the tests", "insert into ClickHouse", or "call the Guild API". Rewritten calls, changed flags, and new approaches to the same goal all add to the same count. When the count reaches `FAIL_LIMIT`, stop. Do not make attempt number `FAIL_LIMIT + 1` until you have finished steps 1–4 below.
-- **Semgrep PR check.** `gh pr checks` shows `semgrep/ci` failing. Go to the Semgrep PR check section.
+- **Semgrep PR check.** `gh pr checks` shows `semgrep/ci` or `semgrep/repo-rules` failing. Go to the Semgrep PR check section.
 - **Semgrep finding.** Guardian output contains a line like `[ERROR] python.lang.security.audit.subprocess-shell-true.subprocess-shell-true`. Go to the Semgrep section.
 
 ## Why you do not just retry
@@ -59,12 +59,19 @@ FAIL_LIMIT=3                                    # failures before you must consu
 4. Confirm that Guardian's scan of the rewritten file reports no finding for that rule. Do not move on until it does. Never add `nosemgrep` or any other suppression without telling the user the rule ID and why.
 
 ## Semgrep PR check: steps
-`.github/workflows/semgrep.yml` runs `semgrep ci` (Semgrep AppSec Platform) on every PR. Each failed `semgrep/ci` run counts as one failure toward `FAIL_LIMIT`. When the workflow's `semgrep/escalate` job counts `FAIL_LIMIT` failed runs on the branch, it labels the PR `needs-human`. That label is the human-in-the-loop (HITL) route.
+`.github/workflows/semgrep.yml` runs two checks on every PR:
+
+| Check | Rules | Findings artifact |
+|---|---|---|
+| `semgrep/ci` | Semgrep AppSec Platform Policies (`semgrep ci`) | `semgrep-results` → `semgrep-results.json` |
+| `semgrep/repo-rules` | This repo's own rules in `.semgrep/rules/` | `semgrep-repo-rules-results` → `semgrep-repo-rules-results.json` |
+
+Each failed workflow run counts as one failure toward `FAIL_LIMIT`, whichever check failed. When the workflow's `semgrep/escalate` job counts `FAIL_LIMIT` failed runs on the branch, it labels the PR `needs-human`. That label is the human-in-the-loop (HITL) route.
 1. After every push to a PR branch, wait for the check:
    ```bash
    gh pr checks <pr> --watch     # waits for every check, including semgrep/escalate
    ```
-2. If `semgrep/ci` fails, first check for the label:
+2. If either check fails, first check for the label:
    ```bash
    gh pr view <pr> --json labels --jq '.labels[].name' | grep -x needs-human
    ```
@@ -72,14 +79,16 @@ FAIL_LIMIT=3                                    # failures before you must consu
 3. Otherwise, download the findings from the failed run:
    ```bash
    RUN=$(gh run list --workflow Semgrep --branch <branch> --status failure --limit 1 --json databaseId --jq '.[0].databaseId')
-   gh run download $RUN -n semgrep-results -D /tmp/semgrep-$RUN
-   jq -r '.results[] | "[\(.extra.severity)] \(.check_id)  \(.path):\(.start.line)"' /tmp/semgrep-$RUN/semgrep-results.json
+   gh run download $RUN -D /tmp/semgrep-$RUN     # downloads both artifacts that exist
+   jq -r '.results[] | "[\(.extra.severity)] \(.check_id)  \(.path):\(.start.line)"' /tmp/semgrep-$RUN/*/*.json
    ```
-   If there is no artifact, or `results` is empty, the scan itself failed (for example, a missing `SEMGREP_APP_TOKEN`). Read `gh run view $RUN --log-failed`, then report to the user instead of changing code.
+   - If `semgrep/repo-rules` failed at its `Rule fixtures match where annotated` step, a rule or its fixture in `.semgrep/rules/` is wrong, not your code. Fix it as `.semgrep/rules/README.md` says and run `semgrep --test .semgrep/rules` locally until it passes.
+   - Otherwise, if there is no artifact or `results` is empty, the scan itself failed (for example, a missing `SEMGREP_APP_TOKEN`). Read `gh run view $RUN --log-failed`, then report to the user instead of changing code.
+   - Before pushing a fix for a repo-rule finding, confirm it locally: `semgrep scan --config .semgrep/rules --exclude .semgrep --metrics off --error .` exits 0.
 4. For each `check_id`, follow **Semgrep finding: steps** 1–3 above. Then commit with a `fix:` message that names the rule ID, push, and return to step 1.
 
 ## Done means (report each with evidence)
 - The command output from step 1, plus step 2 if you ran it, or the exact lesson lookup for a Semgrep finding.
 - The lesson you used and the `context-injected` command you ran, or a one-line reason no lesson applied.
-- For Semgrep: the clean re-scan of the file. For a PR: `semgrep/ci` passing, or the `needs-human` label plus your report to the user. For a PR: `semgrep/ci` passing, or the `needs-human` label and your report to the user.
+- For Semgrep: the clean re-scan of the file. For a PR: `semgrep/ci` and `semgrep/repo-rules` passing, or the `needs-human` label plus your report to the user.
 - No attempt beyond `FAIL_LIMIT` happened before the Senso lookup.

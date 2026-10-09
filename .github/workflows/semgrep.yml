@@ -1,4 +1,4 @@
-# Semgrep AppSec Platform scan on every PR. Blocking findings fail the check; the coding agent then follows
+# Semgrep AppSec Platform scan plus the repo's own rules (.semgrep/rules) on every PR. Blocking findings fail the check; the coding agent then follows
 # .claude/skills/senso-lessons (look up the Senso lesson, fix, push). After SEMGREP_FAIL_LIMIT failed runs on
 # one branch, the escalate job labels the PR `needs-human` and agents stop pushing fixes.
 # The name must stay `Semgrep`: trace-github.yml traces completed runs of this workflow by name.
@@ -41,9 +41,29 @@ jobs:
           path: semgrep-results.json
           if-no-files-found: ignore
 
+  # Project rules live in .semgrep/rules (one rule + one annotated fixture per file). `semgrep ci` refuses
+  # --config while logged in, so they run here as a separate scan that needs no token.
+  repo-rules:
+    name: semgrep/repo-rules
+    runs-on: ubuntu-latest
+    if: (github.actor != 'dependabot[bot]')
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - run: pipx install semgrep
+      - name: Rule fixtures match where annotated
+        run: semgrep --test .semgrep/rules
+      - name: Repo rules find nothing
+        run: semgrep scan --config .semgrep/rules --exclude .semgrep --metrics off --error --json-output=semgrep-repo-rules-results.json .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: semgrep-repo-rules-results
+          path: semgrep-repo-rules-results.json
+          if-no-files-found: ignore
+
   escalate:
     name: semgrep/escalate
-    needs: semgrep
+    needs: [semgrep, repo-rules]
     if: failure() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:

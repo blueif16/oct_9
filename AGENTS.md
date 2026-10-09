@@ -15,7 +15,7 @@ If either ID above still reads `TODO_…`, Senso is not set up yet: say so to th
 4. To hand work to another agent, save a brief to FOLDER_ID with `senso kb create-raw` and pass on the returned ID.
 5. Never overwrite an idea document; save a new version (V1, V2, …) so the reason an idea was dropped stays visible.
 6. Label every number in a document as measured, fixture, or guessed.
-7. After 3 failures of the same goal, on any Semgrep finding, or when the `semgrep/ci` PR check fails, follow `.claude/skills/senso-lessons/SKILL.md` before trying again.
+7. After 3 failures of the same goal, on any Semgrep finding, or when the `semgrep/ci` or `semgrep/repo-rules` PR check fails, follow `.claude/skills/senso-lessons/SKILL.md` before trying again.
 
 Commands (add `--output json` when parsing the result):
 
@@ -39,3 +39,5 @@ Hooks (`.claude/settings.json`, `.codex/hooks.json`) send every session, prompt,
 ## Security scanning (Semgrep Guardian)
 
 Semgrep Guardian scans every file an agent writes (Claude Code plugin + Codex plugin). When it returns findings, fix them before moving on; never suppress a finding without telling the user.
+
+Project-specific rules live in `.semgrep/rules/` and run only in CI (`semgrep/repo-rules`), not in Guardian. To add or change one, follow `.semgrep/rules/README.md`.

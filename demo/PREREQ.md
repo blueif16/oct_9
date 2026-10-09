@@ -20,7 +20,7 @@ Status values: `todo` · `pass` (evidence filled in) · `fail` (with the error) 
 | P8 | Senso baseline is recorded | `senso kb children 11fcd627-2d7f-4d1f-9e44-a1c090d26ab5 --output json \| jq -r '.nodes[].name'` saved to `demo/evidence/senso-before.txt`. There must be **no** lesson for the B2 rule yet | todo (today: CURRENT.md, DESIGN-agent-triggers-V1.md, 1 LESSON for shell=True, measured) |
 | P9 | Recording isolation | Recording runs from a dedicated worktree `.claude/worktrees/demo-run`; no other Claude/Codex session is active in this repo during takes (a parallel session switched branches under us earlier today) | todo |
 | P10 | No secrets on screen | Never open `~/.config/oct9/*`; query ClickHouse with saved SQL or the MCP; Slack token never printed; browser shows no autofill | todo |
-| P11 | Repo-rule `check_id` matches the lesson naming | In a B2 findings artifact, `jq -r '.results[0].check_id'`. The lesson trace-to-memory writes for it must be named `LESSON-semgrep-<check_id with . → ->-V1.md`, or the B6 exact lookup misses. Record the real check_id here: ____ | todo (`semgrep scan --config <path>` may prefix the ID with the path, guessed) |
+| P11 | Repo-rule `check_id` matches the lesson naming | In a B2 findings artifact, `jq -r '.results[0].check_id'`. The lesson trace-to-memory writes for it must be named `LESSON-semgrep-<check_id with . → ->-V1.md`, or the B6 exact lookup misses. Record the real check_id here: `semgrep.rules.trace-payload-must-be-redacted` → lesson `LESSON-semgrep-semgrep-rules-trace-payload-must-be-redacted-V1.md` | pass (measured from the CI artifact of run 38002749824, PR #5; the path prefix `semgrep.rules.` is real) |
 
 ## B: beats (verify each once with evidence, then record)
 
@@ -36,6 +36,7 @@ Each beat lists: **stage** (the deterministic input), **expected** (observable r
 - **Stage:** branch `demo/pr-loop` from `main` with one fixture commit that violates `trace-payload-must-be-redacted` (copy the bad pattern from `.semgrep/rules/trace-payload-must-be-redacted.js`; label the file fixture). Open a PR. The commit must **not** carry a live `Agent-Session:` trailer (see B4).
 - **Expected:** `semgrep/repo-rules` fails; `semgrep/escalate` counts `1 (limit 3)`; no label.
 - **Evidence:** PR URL; red checks; the findings artifact; check_id (fills P11).
+- **V (2026-10-09, pass, measured):** PR #5 (`demo/proof-repo-rules`, fixture `demo/fixtures/unredacted-trace-payload.mjs`), run 38002749824. `semgrep/repo-rules` failed at "Repo rules find nothing" with `[ERROR] semgrep.rules.trace-payload-must-be-redacted demo/fixtures/unredacted-trace-payload.mjs:4`; `semgrep/ci` passed on the same code; escalate logged `1 (limit 3)`, no label. Screenshots: `demo/evidence/b2-*.png`, `pr5-*.png`. This commit carried an `Agent-Session:` trailer, so it is a verify run, not the recording take. Close PR #5 before recording.
 - **Reset:** close the PR, delete the branch, re-create it under a new name (failure counts are per branch).
 
 ### B3 · Three strikes → `needs-human` (target 15 s)

@@ -381,14 +381,15 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 <!-- ===========================================
      SLIDE 6 · B2+B3 THREE STRIKES (1:13–1:30)
      Media: PR with red semgrep/repo-rules, then the needs-human label + comment.
-     Interim still: media/b2-repo-rules-fail.png (real run, PR #5: semgrep/ci green, semgrep/repo-rules red).
-     Replace with the B2–B3 recording once B3 (needs-human) is captured.
+     Real captures, PR #5: semgrep/repo-rules red while semgrep/ci passed, then 2 retry commits ✗,
+     needs-human label and the escalation comment (media/b2-b3-escalation.png).
      =========================================== -->
 <section class="slide" data-duration="17">
     <aside class="notes">Some mistakes reach a pull request. Our own repo rule catches an unredacted trace payload that Semgrep's default scan missed. Three failures, and the agents stop. The PR is labeled needs-human.</aside>
     <div class="tag tl">loop 2 · escalate</div>
+    <div class="tag tr">real · PR #5</div>
     <div class="beat">
-        <figure class="slot" data-beat="B2-B3" data-src="media/b2-repo-rules-fail.png" data-at="0">
+        <figure class="slot" data-beat="B2-B3" data-src="media/b2-b3-escalation.png" data-at="0">
             <div class="ph"><b>B2 · B3</b><span>PR check fails on a blocking rule → 3rd failed run → needs-human label + escalation comment</span></div>
         </figure>
         <div class="rail">
@@ -412,6 +413,7 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 <section class="slide" data-duration="26">
     <aside class="notes">Now a human steps in, but only once, and with context. Our Guild agent posts one question in Slack: what was tried, which rules failed, and what team memory says. The human replies with one word: continue, rerun, guardrail, or stop. The agent acts on it and confirms.</aside>
     <div class="tag tl">loop 2 · human in the loop</div>
+    <div class="tag tr">real · PR #4 · Slack</div>
     <div class="beat">
         <figure class="slot" data-beat="B4" data-src="../raw/B4-human-in-the-loop.png" data-at="0">
             <div class="ph"><b>B4</b><span>Slack: pr-decision posts what was tried + team memory → human replies → label removed</span></div>
@@ -430,26 +432,25 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 
 <!-- ===========================================
      SLIDE 8 · B5 LEARN (1:56–2:22)
-     Media: trigger row → Guild session → new LESSON doc in Senso.
-     Say on screen if the trigger was manual.
+     Content is the real lesson trace-to-memory wrote at 23:31 UTC from PR #5's findings (quoted from Senso).
      =========================================== -->
 <section class="slide" data-duration="26">
     <aside class="notes">Meanwhile, the third loop runs. Every tool call and every scan is traced into ClickHouse. When a failure pattern shows up, ClickHouse wakes a Guild agent. It reads the traces and writes a new lesson into Senso. Versioned, never overwritten, so we always know why an idea changed.</aside>
     <div class="tag tl">loop 3 · learn</div>
+    <div class="tag tr">real · written by our Guild agent, 23:31 UTC</div>
     <div class="beat">
         <figure class="slot" data-beat="B5" data-src="" data-at="0">
             <div class="ph"><b>B5</b><span>ClickHouse trigger → Guild trace-to-memory session → new LESSON-…-V1 appears in Senso</span></div>
             <div class="mock">
-                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">illustration</div>
+                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">from Senso, verbatim</div>
                 <div data-at="3"><span class="cmd">ClickHouse</span> agent_traces.events</div>
-                <div data-at="4" class="dim">  semgrep_scan · tool_call · github_push · github_ci …</div>
-                <div data-at="8"><span class="bad">!</span> semgrep/repo-rules failed 3× on one branch</div>
-                <div data-at="9" class="dim">  INSERT INTO trigger_requests (agent) VALUES ('trace-to-memory')</div>
-                <div data-at="13.5"><span class="cmd">Guild</span> blueif16~trace-to-memory · session started</div>
-                <div data-at="14.5" class="dim">  reading traces (read-only SQL) · writing lesson</div>
+                <div data-at="4" class="dim">  semgrep_scan rows · rule semgrep.rules.trace-payload-must-be-redacted</div>
+                <div data-at="8"><span class="bad">!</span> 3 findings · 23:08 → 23:16 UTC · PR #5</div>
+                <div data-at="13.5"><span class="cmd">Guild</span> blueif16~trace-to-memory · rule lessons-from-failures</div>
                 <div class="card" data-at="17">
-                    <b>+ Senso</b> LESSON-semgrep-semgrep-rules-<br>trace-payload-must-be-redacted-V1.md
-                    <div class="dim" style="margin-top:8px">## Do this instead: redact the payload before it is sent</div>
+                    <b>+ Senso</b> LESSON-semgrep-semgrep-rules-trace-payload-must-be-redacted-V1.md
+                    <div style="margin-top:10px"><span class="dim">## Evidence (measured)</span><br>3 findings · demo/fixtures/unredacted-trace-payload.mjs</div>
+                    <div style="margin-top:10px"><span class="dim">## Do this instead</span><br>Never write raw event logs without passing them through redaction functions first.</div>
                 </div>
             </div>
         </figure>
@@ -469,50 +470,57 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 </section>
 
 <!-- ===========================================
-     SLIDE 9 · B6 PAYOFF (2:22–2:40)
-     Media: fresh session finds the new lesson, one fix push, green checks.
+     SLIDE 9 · PAYOFF (2:22–2:42)
+     Real, 2026-10-09: session 023a8053 failed 3× in 1 min on the worktree guard (measured, from the lesson);
+     loop-breaker wrote LESSON-loop-worktree-complex-command-V1 at 22:53 UTC; a later session hit the same
+     guard, used the lesson's fix and logged context_injected.
      =========================================== -->
-<section class="slide" data-duration="18">
-    <aside class="notes">And here's the payoff. A brand-new session hits the same mistake. It finds yesterday's lesson, fixes it on the first push, and the checks go green. Three failures before. One push after.</aside>
+<section class="slide" data-duration="20">
+    <aside class="notes">The payoff is real. One of our agents failed three times on a blocked command, and a Guild agent wrote the lesson. Later, another agent hit the same wall, read it, and got through first try.</aside>
     <div class="tag tl">the payoff</div>
+    <div class="tag tr">real · our own build, 2026-10-09</div>
     <div class="beat">
         <figure class="slot" data-beat="B6" data-src="" data-at="0">
-            <div class="ph"><b>B6</b><span>Fresh session, same mistake → finds the new lesson → one fix push → green</span></div>
+            <div class="ph"><b>B6</b><span>Fresh session, same mistake → finds the new lesson → first try</span></div>
             <div class="mock">
-                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">illustration</div>
-                <div data-at="2"><span class="cmd">new session ▸</span> PR semgrep/repo-rules is failing. Fix it.</div>
-                <div data-at="3.5"><span class="bad">✗</span> semgrep.rules.trace-payload-must-be-redacted</div>
-                <div data-at="5.5"><span class="cmd">$</span> senso kb children $FOLDER | grep LESSON-semgrep-semgrep-rules-…</div>
-                <div data-at="7"><span class="ok">✓</span> found yesterday's lesson · V1</div>
-                <div data-at="9"><span class="cmd">$</span> git push <span class="dim"># fix: redact trace payload (1 commit)</span></div>
-                <div data-at="11"><span class="ok">✓ semgrep/ci</span>   <span class="ok">✓ semgrep/repo-rules</span></div>
-                <div data-at="12" class="ok">  All checks have passed · first try</div>
+                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">from traces + Senso</div>
+                <div data-at="2"><span class="cmd">session 023a8053 ▸</span> patch a Senso doc with <span class="dim">$(cat …)</span></div>
+                <div data-at="3.5"><span class="bad">✗ ✗ ✗</span> blocked: too complex to verify <span class="dim">· 5 attempts · 1 min</span></div>
+                <div data-at="8"><span class="cmd">Guild</span> loop-breaker · repeated-failure checkpoint</div>
+                <div class="card" data-at="10">
+                    <b>+ Senso</b> LESSON-loop-worktree-complex-command-V1.md <span class="dim">· 22:53 UTC</span>
+                    <div style="margin-top:10px"><span class="dim">## Do this instead</span><br>use python3 subprocess.run, not $(…) or heredocs</div>
+                </div>
+                <div data-at="12" style="margin-top:14px"><span class="cmd">another session ▸</span> same guard <span class="bad">✗</span> → reads the lesson</div>
+                <div data-at="15"><span class="cmd">$</span> python3 senso_read.py <span class="dim"># subprocess.run([...])</span></div>
+                <div data-at="16.5"><span class="ok">✓ through on the first try · context_injected logged</span></div>
             </div>
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Same mistake.<br>New agent.<br><em>First try.</em></div>
             <div class="versus">
-                <div class="col" data-at="13"><div class="big red">3</div><div class="cap">failed runs before</div></div>
-                <div class="col" data-at="14.8"><div class="big mint">1</div><div class="cap">push after</div></div>
+                <div class="col" data-at="4.5"><div class="big red">3</div><div class="cap">failures before</div></div>
+                <div class="col" data-at="16.5"><div class="big mint">1</div><div class="cap">try after</div></div>
             </div>
         </div>
     </div>
 </section>
 
 <!-- ===========================================
-     SLIDE 10 · CLOSE (2:40–3:00)
-     Numbers are measured from agent_traces.events on 2026-10-09; refresh before recording.
+     SLIDE 10 · CLOSE (2:42–3:00)
+     Measured 2026-10-09 ~23:50 UTC: agent_traces.events FINAL (879 tool_call, 870 semgrep_scan);
+     Senso folder: 8 LESSON-* docs written by Guild agents. Refresh before recording.
      =========================================== -->
-<section class="slide" data-duration="20">
-    <aside class="notes">So far, we've traced over five hundred tool calls and five hundred security scans. Every one makes the next agent a little smarter. token-wise. Fail once. Never twice.</aside>
+<section class="slide" data-duration="18">
+    <aside class="notes">Today alone, we traced nearly nine hundred tool calls and security scans, and our agents wrote eight lessons from their own mistakes. token-wise. Fail once. Never twice.</aside>
     <div class="center" style="gap: 64px;">
         <div class="stats">
-            <div class="stat" data-at="0.5"><div class="num" data-count-to="554">0</div><div class="lbl">tool calls traced</div><div class="src">measured</div></div>
-            <div class="stat" data-at="3"><div class="num" data-count-to="553">0</div><div class="lbl">security scans</div><div class="src">measured</div></div>
-            <div class="stat" data-at="6"><div class="num">3</div><div class="lbl">strikes, then a human</div><div class="src">policy</div></div>
+            <div class="stat" data-at="0.5"><div class="num" data-count-to="879">0</div><div class="lbl">tool calls traced</div><div class="src">measured · today</div></div>
+            <div class="stat" data-at="4.5"><div class="num" data-count-to="870">0</div><div class="lbl">security scans</div><div class="src">measured · today</div></div>
+            <div class="stat" data-at="8"><div class="num" data-count-to="8">0</div><div class="lbl">lessons agents wrote<br>from their own mistakes</div><div class="src">measured · Senso</div></div>
         </div>
-        <div class="h-xl" data-at="12.8">Fail once.<br><em>Never twice.</em></div>
-        <div class="stackline" data-at="12">token-wise · Semgrep · Senso · ClickHouse · Guild · Slack · Claude Code · Codex</div>
+        <div class="h-xl" data-at="12">Fail once.<br><em>Never twice.</em></div>
+        <div class="stackline" data-at="11.5">token-wise · Semgrep · Senso · ClickHouse · Guild · Slack · Claude Code · Codex</div>
     </div>
 </section>
 

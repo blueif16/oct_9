@@ -11,6 +11,7 @@ const TEXT_RULES = [
   [/\bAKIA[0-9A-Z]{16}\b/g, MASK],                                             // AWS access key
   [/\bxox[abprs]-[\w-]{10,}/g, MASK],                                          // Slack
   [/\btgr_[A-Za-z0-9]{8,}/g, MASK],                                            // Senso
+  [/\bgldt_[A-Za-z0-9_-]{16,}/g, MASK],                                       // Guild API trigger key
   [/\b(Bearer|Basic)\s+[\w\-.~+/=]{8,}/gi, `$1 ${MASK}`],
   [/(\b[a-z][\w+.-]*:\/\/[^\s:/@]+:)[^\s@/]+@/gi, `$1${MASK}@`],               // scheme://user:pass@
   [/((?:^|\s)(?:-u|--user)(?:\s+|=)(["']?)[^\s:"']+:)[^\s"']+/g, `$1${MASK}`],  // curl -u/--user name:pass

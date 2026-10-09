@@ -80,3 +80,10 @@ test('redacts values of key-bearing HTTP headers like X-ClickHouse-Key', () => {
 test('keeps ordinary "name: value" lines such as git author headers', () => {
   for (const s of ['Author: Bob <bob@x.dev>', 'sorted by key: name', 'monkey: banana']) assert.equal(redact(s), s);
 });
+
+test('redacts Guild API trigger keys', () => {
+  const key = '01a12269-4dda-7499-0000-000000000000:' + 'gldt_' + 'AbCdEfGhIjKlMnOpQrStUvWxYz0123456789';
+  const out = redact(`here is the key ${key} thanks`);
+  assert.ok(!out.includes('gldt_AbCdEf'));
+  assert.ok(out.endsWith(' thanks'));
+});

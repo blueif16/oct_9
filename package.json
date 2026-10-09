@@ -5,6 +5,7 @@
   "scripts": {
     "test": "node --test \"tracing/test/**/*.test.mjs\"",
     "prepare": "git config core.hooksPath .githooks",
-    "trace:schema": "node tracing/apply-schema.mjs"
+    "trace:schema": "node tracing/apply-schema.mjs",
+    "trace:webhook": "node tracing/apply-webhook.mjs"
   }
 }

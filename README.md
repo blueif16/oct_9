@@ -54,8 +54,8 @@ precomputed window and summary, so they spend fewer queries.
 | `events` | `ReplacingMergeTree(inserted_at)`, `PARTITION BY toYYYYMM(ts)`, `ORDER BY (repo, session_id, ts, event_id)` | One row per traced event. Re-sent rows (spool retries) share an `event_id` and collapse |
 | `trigger_requests` | `MergeTree` | One row = one agent run: `agent`, `dedup_key`, `window_start`/`window_end`, `context` JSON, `text` |
 | `detect_*_mv` | Refreshable MV (`REFRESH EVERY … APPEND TO trigger_requests`) | Detectors: re-run a query on a schedule, append new triggers |
-| `trigger_requests_mv` | Incremental MV, `WHERE agent = '<agent>'` | Fires on each insert into `trigger_requests` and routes the row to that agent's webhook |
-| `guild_webhook` | `URL(…, JSONEachRow, headers(…))` | An `INSERT` becomes an HTTP POST to Guild (`session_type: api_trigger`) |
+| `trigger_requests_mv`, `trigger_requests_<agent>_mv` | Incremental MV, `WHERE agent = '<agent>'` | Fires on each insert into `trigger_requests` and routes the row to that agent's webhook (session-retro also gets `' Context: ' \|\| context` appended to its text) |
+| `guild_webhook`, `guild_webhook_<agent>` | `URL(…, JSONEachRow, headers(…))` | An `INSERT` becomes an HTTP POST to Guild (`session_type: api_trigger`). One table per agent, because each Guild API key starts one agent |
 
 Flow: `events` → detector (every 5 min) → `trigger_requests` → incremental MV → URL table → Guild run.
 Verified 2026-10-09: rows appended by a refreshable MV do fire the downstream incremental MV.
@@ -89,7 +89,7 @@ Verified 2026-10-09: rows appended by a refreshable MV do fire the downstream in
 
 | Detector | Fires when | Agent | Status |
 |---|---|---|---|
-| `detect_session_end_mv` | a `session_end` with ≥ 5 tool calls in its segment | `session-retro` → PLAYBOOK docs | live; agent and webhook not built yet, rows wait in `trigger_requests` |
+| `detect_session_end_mv` | a `session_end` with ≥ 5 tool calls in its segment | `session-retro` → PLAYBOOK docs | detector live; agent saved as draft; webhook waits for its key, rows queue in `trigger_requests` |
 | volume | a live session passes another N tool calls | `session-retro` | planned |
 | thrash | same command / failing goal ≥ 3 times in 10 min | `loop-breaker` | planned |
 | PR merged | `github_pr` closed + merged; context = linked sessions' calls since the agent's last run | `workflow-canonizer` → RUNBOOK (proposed) | planned |
@@ -113,4 +113,7 @@ INSERT INTO agent_traces.trigger_requests (source, agent, text)
 VALUES ('manual', 'trace-to-memory', 'Run rule lessons-from-failures for the last 24 hours.');
 ```
 
-Credentials live in `~/.config/oct9/` (`clickhouse.env`, `guild.env`), never in the repo.
+Credentials live in `~/.config/oct9/` (`clickhouse.env`, `guild.env`), never in the repo. `guild.env` holds
+`GUILD_TRIGGER_KEY` (trace-to-memory) and one `GUILD_TRIGGER_KEY_<AGENT>` per other agent (e.g.
+`GUILD_TRIGGER_KEY_SESSION_RETRO`). `npm run trace:webhook` skips an agent whose key is missing, together with
+every view that writes to its webhook.

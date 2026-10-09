@@ -1,5 +1,7 @@
-// FIXTURE (synthetic, demo beat B2): deliberately violates .semgrep/rules/trace-payload-must-be-redacted.
-// It sends a tool input to the trace row without redact(), so `semgrep/repo-rules` must fail this PR.
+// FIXTURE (synthetic, demo beat B6): the B2 violation of .semgrep/rules/trace-payload-must-be-redacted, fixed.
+// The tool input now passes through redact() before it reaches the trace row.
+import { redact } from '../../tracing/lib/redact.mjs';
+
 export function toTraceRow(input) {
-  return { event_type: 'tool_call', payload: JSON.stringify(input) };
+  return { event_type: 'tool_call', payload: JSON.stringify(redact(input)) };
 }

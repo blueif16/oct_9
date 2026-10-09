@@ -63,11 +63,11 @@ export function extractSemgrep(records, ctx = {}) {
         ...base(rec, a, 'semgrep_scan'),
         semgrep_outcome: 'no_findings', semgrep_findings: 0,
         semgrep_rules: [], semgrep_severities: [], semgrep_files: [],
-        payload: JSON.stringify({ hook_name: a.hookName, duration_ms: a.durationMs ?? null }),
+        payload: JSON.stringify(redact({ hook_name: a.hookName, duration_ms: a.durationMs ?? null })),
       });
     } else if (event === 'Stop' && a.type === 'hook_success') {
       const s = parseSummary(a.stdout ?? '');
-      if (s) push({ ...base(rec, a, 'semgrep_summary'), payload: JSON.stringify(s) });
+      if (s) push({ ...base(rec, a, 'semgrep_summary'), payload: JSON.stringify(redact(s)) });
     }
   }
   return out;

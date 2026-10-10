@@ -128,11 +128,17 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           FAILURES: ${{ steps.count.outputs.failures }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CI_RESULT: ${{ needs.semgrep.result }}
+          REPO_RULES_RESULT: ${{ needs.repo-rules.result }}
         run: |
           if [ -z "$GUILD_PR_DECISION_KEY" ]; then
             echo "::warning::Repository secret GUILD_PR_DECISION_KEY is not set; nobody was asked in Slack."
             exit 0
           fi
-          text="ESCALATE repo=$REPO pr=$PR branch=$BRANCH run_id=$RUN_ID failures=$FAILURES run_url=$RUN_URL"
+          # Name the check(s) that actually failed so the Slack question doesn't guess.
+          failed=""
+          [ "$CI_RESULT" = "failure" ] && failed="semgrep/ci"
+          [ "$REPO_RULES_RESULT" = "failure" ] && failed="${failed:+$failed,}semgrep/repo-rules"
+          text="ESCALATE repo=$REPO pr=$PR branch=$BRANCH run_id=$RUN_ID failures=$FAILURES failed_checks=${failed:-unknown} run_url=$RUN_URL"
           jq -n --arg text "$text" '{session_type: "api_trigger", agent_input: {text: $text}}' \
             | curl -sS --fail-with-body -u "$GUILD_PR_DECISION_KEY" -H "Content-Type: application/json" -d @- "$GUILD_SESSIONS_URL"

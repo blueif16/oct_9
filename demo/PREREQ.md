@@ -50,6 +50,7 @@ Each beat lists: **stage** (the deterministic input), **expected** (observable r
 - **Stage:** after B3, with owner `guild`.
 - **Expected:** Guild `pr-decision` posts the policy's question in the channel (header line `pr-decision v1 owner=guild …`, pushes tried, rules hit, team memory line). A human replies in the thread with `continue`. The reply webhook runs the agent, which removes `needs-human` and confirms in the thread and on the PR.
 - **Evidence:** Slack question; thread reply; agent confirmation; PR label removal event; both Guild session IDs.
+- **V (2026-10-10, pass, measured from the GitHub API):** real retake on PR #5. `needs-human` added by github-actions[bot] 2026-10-09 23:16:31Z after 3 repo-rule failures (runs 38002749824, 38003240875, 38003430961). The human replied `continue` in Slack, guild-ai-platform[bot] removed the label 2026-10-10 00:02:52Z and commented "Human decision via Slack (<@U0C80CJ2Z7V>): continue" at 00:02:56Z. PR frame: `demo/deck/media/b4-pr5-timeline.png`; Slack frame: pending the user's screenshot. Replaces the earlier PR #4 test capture.
 - **Reset:** re-add the label by hand only for re-taking the Slack screen; for a true re-run, redo B2–B3 on a new branch.
 
 ### B5 · Learning sidecar: traces become a new lesson (target 30 s)

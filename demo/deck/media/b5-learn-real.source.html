@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+body{width:1120px;height:700px;background:#0f1218;color:#e6e9ef;font:16px/1.45 -apple-system,"SF Pro Text",Helvetica,sans-serif;padding:26px 30px;display:flex;flex-direction:column;gap:14px}
+.card{background:#171b23;border:1px solid #2a303c;border-radius:12px;padding:14px 18px;position:relative}
+.tag{font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:#f5b14c;margin-bottom:8px;display:flex;justify-content:space-between}
+.tag span{color:#7d8698;font-weight:400;text-transform:none;letter-spacing:0}
+code,.mono{font:14px/1.5 ui-monospace,Menlo,monospace}
+.row{display:grid;grid-template-columns:200px 100px 150px 1fr;gap:12px;font:14px ui-monospace,Menlo,monospace;color:#c9d1e0}
+.row.h{color:#7d8698;font-size:12px;margin-bottom:2px}
+.ok{color:#5fd38d}.red{color:#ff6b6b}.dim{color:#7d8698}
+.arrow{text-align:center;color:#f5b14c;font:600 13px ui-monospace,Menlo,monospace;margin:-6px 0}
+.doc h3{font:600 17px ui-monospace,Menlo,monospace;color:#9fd0ff;margin-bottom:6px}
+.doc p{font-size:14.5px;color:#c9d1e0}
+.doc .sec{color:#f5b14c;font:600 13px ui-monospace,Menlo,monospace;margin-top:8px}
+.foot{font:12px ui-monospace,Menlo,monospace;color:#7d8698;margin-top:auto}
+</style></head><body>
+<div class="card"><div class="tag">① ClickHouse · CI findings traced <span>agent_traces.events · PR #5 · demo/proof-repo-rules</span></div>
+<div class="row h"><div>ts (UTC)</div><div>event</div><div>outcome</div><div>semgrep_rules</div></div>
+<div class="row"><div>2026-10-09 23:08:35</div><div>semgrep_scan</div><div class="red">findings · 1</div><div>semgrep.rules.trace-payload-must-be-redacted</div></div>
+<div class="row"><div>2026-10-09 23:14:11</div><div>semgrep_scan</div><div class="red">findings · 1</div><div>semgrep.rules.trace-payload-must-be-redacted</div></div>
+<div class="row"><div>2026-10-09 23:16:37</div><div>semgrep_scan</div><div class="red">findings · 1</div><div>semgrep.rules.trace-payload-must-be-redacted</div></div>
+</div>
+<div class="arrow">↓ detect_guardrail_mv · refreshable MV, every 5 min · no manual step</div>
+<div class="card"><div class="tag">② ClickHouse → Guild · trigger row <span>agent_traces.trigger_requests</span></div>
+<div class="mono">2026-10-09 23:30:00 · guardrail · <b>trace-to-memory</b> · "Run rule lessons-from-failures since 2026-10-09T23:08:35Z."<br><span class="dim">context: {"semgrep_findings":"3","ci_failures":"3","force_pushes":"0"}</span></div>
+<div class="mono" style="margin-top:6px">Guild session 01a12300-89dc… · <span class="ok">DONE</span> · created node 3953277d-3069-4ed5-bff9-3595a01fabef at 23:31:41</div>
+</div>
+<div class="arrow">↓ writes team memory (versioned, never overwritten)</div>
+<div class="card doc"><div class="tag">③ Senso · new lesson <span>folder 11fcd627… · node 3953277d…</span></div>
+<h3>LESSON-semgrep-semgrep-rules-trace-payload-must-be-redacted-V1.md</h3>
+<p class="dim mono">lesson_id: semgrep-semgrep-rules-trace-payload-must-be-redacted · signal: A semgrep · previous_version: none</p>
+<div class="sec">## Evidence (measured)</div><p>3 findings · file demo/fixtures/unredacted-trace-payload.mjs · first 23:08:35, last 23:16:37</p>
+<div class="sec">## Do this instead</div><p>Never write raw event logs without passing them through redaction first.</p>
+</div>
+<div class="foot">Real data, captured 2026-10-09 23:55 UTC from ClickHouse, the Guild API and Senso. Times UTC.</div>
+</body></html>

@@ -30,6 +30,7 @@ Each beat lists: **stage** (the deterministic input), **expected** (observable r
 - **Stage:** in `demo-run`, start a fresh Claude Code session and prompt: `Create demo/run_cmd.py with a function run(cmd: str) that runs cmd using subprocess.run(cmd, shell=True).`
 - **Expected:** Guardian reports `python.lang.security.audit.subprocess-shell-true…`. Per `senso-lessons`, the agent does the exact-slug lookup and finds the shell=True `LESSON`. It rewrites with an argument list, Guardian's re-scan is clean, and the agent runs `node tracing/hook.mjs context-injected --lesson-id …`.
 - **Evidence:** the Guardian message; the senso lookup output; the final diff; ClickHouse rows `semgrep_scan` and `context_injected` for this session_id.
+- **V (2026-10-09, pass, measured):** fresh headless session e6b71d2b-8c6e-4f66-869e-8bc41d593d69 (worktree demo-b1) with the exact prompt. Write 23:57:29 → Guardian `python.lang.security.audit.subprocess-shell-true` 23:57:32 → exact-slug lookup found LESSON 0205eeea → `shlex.split` rewrite 23:57:50 → `context_injected` 23:57:53 (24 s). Frame: `demo/deck/media/b1-catch-real.png`; transcript `/tmp/b1.jsonl`.
 - **Reset:** delete `demo/run_cmd.py`, start a new session.
 
 ### B2 · PR check fails on a blocking repo rule (target 15 s)
@@ -62,6 +63,7 @@ Each beat lists: **stage** (the deterministic input), **expected** (observable r
 - **Stage:** new branch `demo/pr-after` with the same violating fixture, PR opened. In a fresh Claude session: `PR #<n> semgrep/repo-rules is failing. Fix it.`
 - **Expected:** the agent downloads findings, finds the B5 lesson by exact slug, applies `## Do this instead`, runs `context-injected`, pushes once, and checks go green on the first fix push.
 - **Evidence:** lookup output naming the new lesson; one fix commit; green checks; `context_injected` row with the new lesson_id.
+- **V (2026-10-09, pass, measured):** PR #7 (`demo/pr-after`, fixture commit 556ad7b, no trailer); repo-rules failed in run 38006518344. Fresh headless session 91c18445-f064-4443-8ce4-4c194fe94244 (worktree demo-b6), prompt "PR #7 semgrep/repo-rules is failing. Fix it." It found the B5 lesson (node 3953277d), logged `context_injected` 23:54:32, made one fix commit 517d10c, and run 38006690563 was all green. Frame: `demo/deck/media/b6-payoff-real.png`; transcript `/tmp/b6.jsonl`.
 - **Reset:** close the PR, new branch.
 
 ## R: recording spec (so frames can be analyzed afterwards)

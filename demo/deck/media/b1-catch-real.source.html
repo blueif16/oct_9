@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+body{width:1120px;height:700px;background:#0f1218;color:#e6e9ef;font:16px/1.45 -apple-system,Helvetica,sans-serif;padding:26px 30px;display:flex;flex-direction:column;gap:12px}
+.card{background:#171b23;border:1px solid #2a303c;border-radius:12px;padding:13px 18px}
+.tag{font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:#f5b14c;margin-bottom:8px;display:flex;justify-content:space-between}
+.tag span{color:#7d8698;font-weight:400;text-transform:none;letter-spacing:0}
+.mono{font:14px/1.55 ui-monospace,Menlo,monospace;color:#c9d1e0}
+.red{color:#ff6b6b}.ok{color:#5fd38d}.dim{color:#7d8698}.blue{color:#9fd0ff}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+pre{font:14px/1.5 ui-monospace,Menlo,monospace;background:#11151c;border-radius:8px;padding:10px 12px;color:#c9d1e0}
+.foot{font:12px ui-monospace,Menlo,monospace;color:#7d8698;margin-top:auto}
+</style></head><body>
+<div class="card"><div class="tag">Prompt to a brand-new Claude session <span>session e6b71d2b… · 2026-10-09 UTC</span></div>
+<div class="mono blue">"Create demo/run_cmd.py with a function run(cmd: str) that runs cmd using subprocess.run(cmd, shell=True)."</div></div>
+<div class="cols">
+ <div class="card"><div class="tag">① 23:57:29 · first write <span class="red">blocked</span></div>
+<pre>def run(cmd: str):
+    return subprocess.run(cmd, <span class="red">shell=True</span>)</pre>
+ <div class="mono" style="margin-top:8px">23:57:32 · Semgrep Guardian: <span class="red">findings</span><br><span class="dim">python.lang.security.audit.subprocess-shell-true</span></div></div>
+ <div class="card"><div class="tag">② asks team memory, not the internet <span>Senso</span></div>
+ <div class="mono">senso-lessons → exact-slug lookup<br>→ <span class="blue">LESSON-semgrep-python-lang-security-audit-<br>&nbsp;&nbsp;subprocess-shell-true-…-V1</span><br>→ "pass the command as an argument list"</div></div>
+</div>
+<div class="cols">
+ <div class="card"><div class="tag">③ 23:57:50 · applies the team's fix <span class="ok">clean re-scan</span></div>
+<pre>import shlex
+def run(cmd: str):
+    return subprocess.run(<span class="ok">shlex.split(cmd)</span>)</pre></div>
+ <div class="card"><div class="tag">④ 23:57:53 · lesson use logged <span>ClickHouse</span></div>
+ <div class="mono">agent_traces.events<br>event_type = <span class="ok">context_injected</span><br>lesson_id = semgrep-python-lang-security-…-shell-true<br><br><span class="ok">24 s</span> from blocked write to logged fix</div></div>
+</div>
+<div class="foot">Real data, 2026-10-09 UTC: headless Claude Code session in worktree demo-b1, Guardian result and context_injected row from ClickHouse agent_traces.events.</div>
+</body></html>

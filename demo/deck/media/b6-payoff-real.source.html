@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+body{width:1120px;height:700px;background:#0f1218;color:#e6e9ef;font:16px/1.45 -apple-system,Helvetica,sans-serif;padding:26px 30px;display:flex;flex-direction:column;gap:14px}
+.cols{display:grid;grid-template-columns:1fr 1.35fr;gap:16px}
+.card{background:#171b23;border:1px solid #2a303c;border-radius:12px;padding:14px 18px}
+.tag{font:600 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:#f5b14c;margin-bottom:10px;display:flex;justify-content:space-between}
+.tag span{color:#7d8698;font-weight:400;text-transform:none;letter-spacing:0}
+.mono{font:14px/1.6 ui-monospace,Menlo,monospace;color:#c9d1e0}
+.red{color:#ff6b6b}.ok{color:#5fd38d}.dim{color:#7d8698}.blue{color:#9fd0ff}
+.big{font:700 44px/1 -apple-system,Helvetica,sans-serif;margin:6px 0 2px}
+.diff{font:13.5px/1.55 ui-monospace,Menlo,monospace;background:#11151c;border-radius:8px;padding:10px 12px;margin-top:6px}
+.del{color:#ff8a8a}.add{color:#7ee2a8}
+.foot{font:12px ui-monospace,Menlo,monospace;color:#7d8698;margin-top:auto}
+</style></head><body>
+<div class="cols">
+ <div class="card"><div class="tag">Before · PR #5 <span>demo/proof-repo-rules</span></div>
+  <div class="mono">
+   run 38002749824 · <span class="red">✗ semgrep/repo-rules</span><br>
+   run 38003240875 · <span class="red">✗ semgrep/repo-rules</span><br>
+   run 38003430961 · <span class="red">✗ semgrep/repo-rules</span><br>
+   <span class="red">needs-human</span> · agents stopped
+  </div>
+  <div class="big red">3 failed runs</div><div class="dim mono">no lesson existed yet</div>
+ </div>
+ <div class="card"><div class="tag">After · PR #7 · brand-new Claude session <span>demo/pr-after</span></div>
+  <div class="mono">
+   prompt: <span class="blue">"PR #7 semgrep/repo-rules is failing. Fix it."</span><br>
+   → senso: found <span class="blue">LESSON-semgrep-semgrep-rules-trace-payload-must-be-redacted-V1</span><br>
+   → applied "Do this instead", local scan: 0 findings<br>
+   → context_injected logged · 23:54:32 UTC<br>
+   → 1 fix commit 517d10c · run 38006690563 <span class="ok">✓ semgrep/repo-rules</span>
+  </div>
+  <div class="big ok">1 push → green</div><div class="dim mono">all checks pass: semgrep/ci · repo-rules · ingest · GitGuardian</div>
+ </div>
+</div>
+<div class="card"><div class="tag">The fix the session made <span>demo/fixtures/unredacted-trace-payload.mjs · commit 517d10c</span></div>
+ <div class="diff">
+  <div class="add">+ import { redact } from '../../tracing/lib/redact.mjs';</div>
+  <div class="del">-   return { event_type: 'tool_call', payload: JSON.stringify(input) };</div>
+  <div class="add">+   return { event_type: 'tool_call', payload: JSON.stringify(redact(input)) };</div>
+ </div>
+</div>
+<div class="foot">Real data, 2026-10-09 UTC: GitHub runs + commits, ClickHouse agent_traces.events (context_injected), Senso node 3953277d… Same mistake, new agent, first try.</div>
+</body></html>

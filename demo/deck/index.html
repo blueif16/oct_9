@@ -346,28 +346,16 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 
 <!-- ===========================================
      SLIDE 5 · B1 CATCH (0:45–1:13)
-     Media: B1 clip/frames. The four steps light up as they are spoken.
+     Real: fresh headless session e6b71d2b (worktree demo-b1) given the PREREQ B1 prompt. Write 23:57:29 →
+     Guardian finding 23:57:32 → exact-slug lesson lookup → shlex.split rewrite 23:57:50 → context_injected 23:57:53.
      =========================================== -->
 <section class="slide" data-duration="28">
     <aside class="notes">First, catch. The agent writes a shell command with shell equals true. Semgrep Guardian blocks the write before it lands. Instead of guessing, the agent asks Senso, our team memory, and finds the lesson a teammate left. It applies that fix, the re-scan comes back clean, and the lesson use is logged.</aside>
     <div class="tag tl">loop 1 · catch</div>
+    <div class="tag tr">real · fresh Claude session · 24 s</div>
     <div class="beat">
-        <figure class="slot" data-beat="B1" data-src="" data-at="0">
+        <figure class="slot" data-beat="B1" data-src="media/b1-catch-real.png" data-at="0">
             <div class="ph"><b>B1</b><span>Guardian blocks shell=True → agent reads the Senso lesson → fixed diff → clean re-scan</span></div>
-            <div class="mock">
-                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">illustration</div>
-                <div data-at="1"><span class="cmd">agent ▸</span> Write demo/run_cmd.py</div>
-                <div data-at="2.5" class="dim">  subprocess.run(cmd, shell=True)</div>
-                <div data-at="6"><span class="bad">✗ Semgrep Guardian · 1 finding · write blocked</span></div>
-                <div data-at="6.6" class="dim">  [ERROR] python.lang.security.audit.subprocess-shell-true</div>
-                <div data-at="11"><span class="cmd">$</span> senso kb children $FOLDER | grep LESSON-semgrep-…</div>
-                <div data-at="12.5"><span class="ok">✓</span> LESSON-semgrep-…-subprocess-shell-true-V1.md</div>
-                <div data-at="14" class="dim">  Do this instead: pass the command as a list, shell=False</div>
-                <div data-at="18.5"><span class="del">subprocess.run(cmd, shell=True)</span></div>
-                <div data-at="19"><span class="add">subprocess.run(shlex.split(cmd))</span></div>
-                <div data-at="21"><span class="ok">✓ Semgrep Guardian · 0 findings</span></div>
-                <div data-at="22.5"><span class="cmd">$</span> node tracing/hook.mjs context-injected <span class="dim">→ ClickHouse</span></div>
-            </div>
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Caught in<br><em>seconds.</em></div>
@@ -473,36 +461,23 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(255,176,0,.5); 
 
 <!-- ===========================================
      SLIDE 9 · PAYOFF (2:22–2:42)
-     Real, 2026-10-09: session 023a8053 failed 3× in 1 min on the worktree guard (measured, from the lesson);
-     loop-breaker wrote LESSON-loop-worktree-complex-command-V1 at 22:53 UTC; a later session hit the same
-     guard, used the lesson's fix and logged context_injected.
+     Real: PR #5 failed semgrep/repo-rules 3× with no lesson; PR #7 (demo/pr-after, same fixture, no trailer)
+     given to fresh headless session 91c18445 with only "PR #7 semgrep/repo-rules is failing. Fix it." It found
+     the B5 lesson (node 3953277d), logged context_injected 23:54:32, one fix commit 517d10c, run 38006690563 green.
      =========================================== -->
 <section class="slide" data-duration="20">
-    <aside class="notes">The payoff is real. One of our agents failed three times on a blocked command, and a Guild agent wrote the lesson. Later, another agent hit the same wall, read it, and got through first try.</aside>
+    <aside class="notes">And here's the payoff. A brand-new session hits the same mistake on a new PR. It finds that lesson, fixes it on the first push, and every check goes green. Three failures before. One push after.</aside>
     <div class="tag tl">the payoff</div>
-    <div class="tag tr">real · our own build, 2026-10-09</div>
+    <div class="tag tr">real · PR #5 → PR #7</div>
     <div class="beat">
-        <figure class="slot" data-beat="B6" data-src="" data-at="0">
+        <figure class="slot" data-beat="B6" data-src="media/b6-payoff-real.png" data-at="0">
             <div class="ph"><b>B6</b><span>Fresh session, same mistake → finds the new lesson → first try</span></div>
-            <div class="mock">
-                <div class="dots"><i></i><i></i><i></i></div><div class="tagx">from traces + Senso</div>
-                <div data-at="2"><span class="cmd">session 023a8053 ▸</span> patch a Senso doc with <span class="dim">$(cat …)</span></div>
-                <div data-at="3.5"><span class="bad">✗ ✗ ✗</span> blocked: too complex to verify <span class="dim">· 5 attempts · 1 min</span></div>
-                <div data-at="8"><span class="cmd">Guild</span> loop-breaker · repeated-failure checkpoint</div>
-                <div class="card" data-at="10">
-                    <b>+ Senso</b> LESSON-loop-worktree-complex-command-V1.md <span class="dim">· 22:53 UTC</span>
-                    <div style="margin-top:10px"><span class="dim">## Do this instead</span><br>use python3 subprocess.run, not $(…) or heredocs</div>
-                </div>
-                <div data-at="12" style="margin-top:14px"><span class="cmd">another session ▸</span> same guard <span class="bad">✗</span> → reads the lesson</div>
-                <div data-at="15"><span class="cmd">$</span> python3 senso_read.py <span class="dim"># subprocess.run([...])</span></div>
-                <div data-at="16.5"><span class="ok">✓ through on the first try · context_injected logged</span></div>
-            </div>
         </figure>
         <div class="rail">
             <div class="h-md" data-at="0.4">Same mistake.<br>New agent.<br><em>First try.</em></div>
             <div class="versus">
-                <div class="col" data-at="4.5"><div class="big red">3</div><div class="cap">failures before</div></div>
-                <div class="col" data-at="16.5"><div class="big mint">1</div><div class="cap">try after</div></div>
+                <div class="col" data-at="15.5"><div class="big red">3</div><div class="cap">failed runs before</div></div>
+                <div class="col" data-at="17"><div class="big mint">1</div><div class="cap">push after</div></div>
             </div>
         </div>
     </div>

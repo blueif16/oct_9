@@ -9,6 +9,8 @@ Every coding-agent session starts with no memory. When an agent hits a bug a tea
 - The learning loop ran **with no manual step**: 3 CI findings at 23:08–23:16 UTC → `detect_guardrail_mv` fired at 23:30 → Guild wrote the lesson at 23:31.
 
 ## Proof points, if they ask "is that real?"
+- **Catch:** a brand-new Claude session was told to use `shell=True`. Guardian blocked it, the agent found the Senso lesson, rewrote with `shlex.split`, and logged the lesson use, **24 s** end to end (session e6b71d2b).
+- **The full loop on one rule:** PR #5 failed `semgrep/repo-rules` 3× with no lesson → the detector fired on its own → Guild wrote the lesson → a fresh session on PR #7, told only "repo-rules is failing, fix it", found that lesson and went green on **1 push** (commit 517d10c).
 - **Escalation:** PR #5 failed `semgrep/repo-rules` 3 times → `needs-human` label + comment (public on GitHub).
 - **Human in the loop:** PR #4. Guild asked in Slack, a human replied `continue`, and the bot removed the label and commented.
 - **Learning from ourselves:** a session failed 3× in 1 minute on a blocked shell command. Guild's loop-breaker wrote `LESSON-loop-worktree-complex-command-V1` at 22:53. A later session hit the same block, used the lesson's fix, and got through on the next try (`context_injected` logged).
@@ -26,6 +28,6 @@ Every coding-agent session starts with no memory. When an agent hits a bug a tea
 **Does it work beyond Claude Code?** Codex uses the same hooks, rules (`AGENTS.md`) and memory. Codex commits don't carry the session trailer yet, so their escalations always go to the Guild agent.
 
 ## Known limits (say them before they're found)
-- Slides 5 (catch) and 9 (payoff) use frames built from real traces and lessons, not screen recordings.
+- Slides 5, 8 and 9 are frames rendered from real traces, GitHub runs and Senso docs, not screen recordings. Every value on them is real.
+- The B1 and B6 sessions ran headless on fixture code we staged so the demo can be repeated. The agents' decisions were their own.
 - The Slack capture's "Tried so far" line says "none found": it came from a test PR with no history.
-- The B5 run wrote the lesson but didn't add it to the `CURRENT.md` index.
